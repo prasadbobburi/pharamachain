@@ -1,0 +1,2036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaChain Smart Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for IoT Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Leaflet (OpenStreetMap) for map preview -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-sA+e2Qb1k3Gz8b2g0qv7Rk6kQWQKp3s9ENzO6w5g4nM=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-o9N1j8kG6kG4s6v2s2G6k9vQ3s5lM1m3Gk7v2s3t5oQ=" crossorigin=""></script>
+    <!-- Lucide Icons for UI -->
+    <script type="module">
+        // Using BarChart instead of BarChart2
+        import { createIcons, Zap, Package, CheckCircle, Truck, Pill, Gauge, MapPin, List, Clock, Shield, BarChart, Cloud, Menu, X, Sun, Moon, LogIn, Factory, User, Building, Landmark, QrCode, Thermometer, Pressure, ShieldAlert } from 'https://unpkg.com/lucide@latest/dist/umd/lucide.js';
+        window.lucideIcons = { Zap, Package, CheckCircle, Truck, Pill, Gauge, MapPin, List, Clock, Shield, BarChart, Cloud, Menu, X, Sun, Moon, LogIn, Factory, User, Building, Landmark, QrCode, Thermometer, Pressure, ShieldAlert };
+        window.addEventListener('load', () => createIcons());
+    </script>
+    <style>
+        /* Base Configuration */
+        :root {
+            /* Professional palette: indigo primary, cyan secondary, deep navy background */
+            --neon-blue: 79, 70, 229; /* indigo-600 */
+            --neon-purple: 14, 165, 233; /* cyan-500 as a secondary accent */
+            --glass-bg-dark: rgba(10, 12, 20, 0.66); /* darker glass for depth */
+            --glass-border-dark: rgba(79, 70, 229, 0.12);
+            --main-bg-dark: #071126; /* deep navy */
+            --text-color-dark: #e6eef8; /* soft off-white for contrast */
+            --kpi-text-color: var(--neon-blue);
+            --muted: #9aa4bf;
+        }
+        
+        /* Glassmorphism Effect */
+        .glass-card {
+            background-color: var(--glass-bg-dark);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid var(--glass-border-dark);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(var(--neon-blue), 0.3);
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Neon Glow Effect for Accents */
+        .neon-text {
+            color: rgb(var(--kpi-text-color));
+            text-shadow: 0 0 5px rgba(var(--neon-blue), 0.7), 0 0 10px rgba(var(--neon-blue), 0.5);
+        }
+        
+        .neon-glow-border {
+            border: 1px solid rgba(var(--neon-blue), 0.5);
+            box-shadow: 0 0 8px rgba(var(--neon-blue), 0.5);
+        }
+
+        /* --- Light Mode Variables --- */
+        html.light {
+            --neon-blue: 79, 70, 229; /* keep indigo for accents */
+            --glass-bg-dark: rgba(255, 255, 255, 0.92); /* white glass */
+            --glass-border-dark: rgba(15, 23, 42, 0.06); /* subtle dark border for structure */
+            --main-bg-dark: #f7fafc; /* very light neutral */
+            --text-color-dark: #0f172a; /* near-black for readability */
+            --kpi-text-color: 31, 41, 55; /* Tailwind gray-800 for KPIs */
+        }
+        
+        html.light body {
+            background-color: var(--main-bg-dark);
+            color: var(--text-color-dark);
+        }
+        
+        html.light .glass-card {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 0 5px rgba(var(--neon-blue), 0.1);
+            border: 1px solid var(--glass-border-dark);
+        }
+        
+        html.light .neon-text {
+            color: rgb(var(--kpi-text-color));
+            text-shadow: none;
+        }
+        
+        html.light .neon-glow-border {
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: none;
+        }
+        
+        /* Apply Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--main-bg-dark);
+            color: var(--text-color-dark);
+            min-height: 100vh;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        /* Sidebar Custom Styles */
+        #sidebar {
+            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+
+        /* Blockchain Chain Visualization */
+        .chain-link {
+            transition: transform 0.5s ease-out, background-color 0.3s;
+        }
+        .chain-block:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 0 20px rgba(var(--neon-purple), 0.8);
+        }
+        
+        html.light .chain-block:hover {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Chart Custom Styles */
+        .chart-container {
+            height: 200px;
+        }
+        /* --- UI Polish & Animations --- */
+
+        /* Load a clean system font fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        :root {
+            --accent-1: 64, 84, 255; /* indigo-ish */
+            --accent-2: 124, 58, 237; /* purple */
+            --card-glow: rgba(99,102,241,0.08);
+            --glass-border: rgba(255,255,255,0.06);
+        }
+
+        body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+
+        /* refined glass card */
+        .glass-card {
+            border-radius: 14px;
+            border: 1px solid var(--glass-border-dark);
+            box-shadow: 0 6px 30px rgba(7, 12, 34, 0.55), 0 2px 8px rgba(0,0,0,0.25);
+            transition: transform 260ms cubic-bezier(.2,.9,.3,1), box-shadow 260ms ease, background 260ms ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 60px rgba(7, 12, 34, 0.6), 0 6px 20px rgba(0,0,0,0.35);
+        }
+
+        /* KPI cards */
+        .kpi-card { padding: 1.25rem; border-radius: 12px; background: linear-gradient(135deg, rgba(var(--neon-blue),0.06), rgba(var(--neon-purple),0.03)); }
+        .kpi-card .neon-text { font-weight: 700; font-size: 1.6rem; letter-spacing: -0.02em; }
+        .kpi-card .icon { opacity: 0.95; }
+
+        /* subtle pulse on KPI values to draw attention */
+        @keyframes kpi-pulse { 0% { transform: translateY(0); } 50% { transform: translateY(-3px); } 100% { transform: translateY(0); } }
+        .kpi-card.pulse { animation: kpi-pulse 3s ease-in-out infinite; }
+
+        /* View enter animation */
+        .view-enter { animation: view-fade-in 320ms ease both; }
+        @keyframes view-fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Toast animation */
+        .toast-anim { animation: toast-in 340ms cubic-bezier(.2,.9,.3,1); }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        /* Block pop-in for blockchain visualization */
+        .pop-in { animation: pop-in 380ms cubic-bezier(.2,.9,.3,1); }
+        @keyframes pop-in { 0% { transform: scale(.96) translateY(8px); opacity: 0; } 60% { transform: scale(1.03) translateY(-4px); opacity: 1; } 100% { transform: scale(1) translateY(0); } }
+
+        /* Form inputs */
+        input[type="email"], input[type="password"], select {
+            transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms ease;
+        }
+        input:focus, select:focus {
+            outline: none; box-shadow: 0 6px 20px rgba(var(--accent-1), 0.12); border-color: rgba(var(--accent-1), 0.9);
+            transform: translateY(-1px);
+        }
+
+        /* Buttons refinement */
+        button { transition: transform 160ms ease, box-shadow 160ms ease; }
+        button:active { transform: translateY(1px) scale(.997); }
+
+    /* Full-width live map panel */
+    #live-map-view { height: 420px; border-radius: 12px; }
+    .map-panel { padding: 0.75rem; }
+    .panel-title { font-weight: 600; color: rgb(var(--neon-blue)); }
+    .control-chip { background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.04); cursor: pointer; }
+
+        
+    </style>
+</head>
+<body class="dark">
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    <div class="flex">
+        <!-- Sidebar -->
+        <!-- Adjusted sidebar styling for light mode compatibility -->
+        <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gray-900 md:bg-transparent shadow-2xl z-40 transform -translate-x-full md:translate-x-0 glass-card p-6">
+            <div class="flex justify-between items-center mb-10">
+                <div class="text-2xl font-bold tracking-widest neon-text">
+                    <span class="text-indigo-400">PHARMA</span><span class="text-purple-400">CHAIN</span>
+                </div>
+                <button id="close-sidebar-btn" class="text-gray-400 md:hidden hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <nav class="space-y-4">
+                <a href="#" data-view="overview" class="nav-link flex items-center p-3 rounded-xl text-black-500 dark:hover:bg-indigo-700/50 dark:text-red-300 dark:hover:neon-glow-border transition duration-200 light:hover:bg-indigo-200 light:text-gray-700">
+                    <i data-lucide="bar-chart" class="w-5 h-5 mr-3"></i> Overview
+                </a>
+                <a href="#" data-view="iot-monitor" class="nav-link flex items-center p-3 rounded-xl text-black-500 dark:hover:bg-indigo-700/50 dark:text-gray-300 dark:hover:neon-glow-border transition duration-200 light:hover:bg-indigo-200 light:text-gray-700">
+                    <i data-lucide="gauge" class="w-5 h-5 mr-3"></i> IoT Monitor
+                </a>
+                <a href="#" data-view="blockchain" class="nav-link flex items-center p-3 rounded-xl text-black-500 dark:hover:bg-indigo-700/50 dark:text-gray-300 dark:hover:neon-glow-border transition duration-200 light:hover:bg-indigo-200 light:text-gray-700">
+                    <i data-lucide="list" class="w-5 h-5 mr-3"></i> Blockchain Ledger
+                </a>
+                <a href="#" data-view="traceability" class="nav-link flex items-center p-3 rounded-xl text-black-500 dark:hover:bg-indigo-700/50 dark:text-gray-300 dark:hover:neon-glow-border transition duration-200 light:hover:bg-indigo-200 light:text-gray-700">
+                    <i data-lucide="truck" class="w-5 h-5 mr-3"></i> Drug Traceability
+                </a>
+                <a href="#" data-view="alerts" class="nav-link flex items-center p-3 rounded-xl text-black-500 dark:hover:bg-indigo-700/50 dark:text-gray-300 dark:hover:neon-glow-border transition duration-200 light:hover:bg-indigo-200 light:text-gray-700">
+                    <i data-lucide="zap" class="w-5 h-5 mr-3"></i> Alert Center
+                </a>
+                <a href="#" data-view="reports" class="nav-link flex items-center p-3 rounded-xl text-black-500 dark:hover:bg-indigo-700/50 dark:text-gray-300 dark:hover:neon-glow-border transition duration-200 light:hover:bg-indigo-200 light:text-gray-700">
+                    <i data-lucide="clock" class="w-5 h-5 mr-3"></i> Reports & Logs
+                </a>
+                    <a href="#" data-view="help" class="nav-link flex items-center p-3 rounded-xl text-black-500 dark:hover:bg-indigo-700/50 dark:text-gray-300 dark:hover:neon-glow-border transition duration-200 light:hover:bg-indigo-200 light:text-gray-700">
+                        <i data-lucide="map-pin" class="w-5 h-5 mr-3"></i> Help
+                    </a>
+            </nav>
+            
+            <div class="absolute bottom-6 w-full pr-12">
+                <p class="text-xs text-gray-500 mt-10">Role: <span id="current-role-display" class="font-semibold text-purple-400">FDA</span></p>
+                <p class="text-xs text-gray-500">System Time: <span id="current-time" class="font-mono"></span></p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main-content" class="flex-1 md:ml-64 p-4 md:p-8 transition-all duration-300">
+            <!-- Top Bar -->
+            <!-- Adjusted header styling for light mode compatibility -->
+            <header class="flex justify-between items-center mb-8 glass-card p-4 rounded-xl sticky top-4 z-30">
+                <button id="open-sidebar-btn" class="md:hidden text-gray-300 dark:hover:text-white light:text-gray-700 light:hover:text-gray-900">
+                    <i data-lucide="menu" class="w-7 h-7"></i>
+                </button>
+                <h2 id="main-title" class="text-xl md:text-2xl font-semibold dark:text-white light:text-gray-900">Overview</h2>
+                <div class="flex items-center space-x-4">
+                    <div id="status-light" class="flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-700/50 text-green-300 neon-glow-border">
+                        <span class="w-2 h-2 rounded-full mr-2 bg-green-400 shadow-lg shadow-green-400/50"></span>
+                        <span id="status-text">SECURE</span>
+                    </div>
+                    
+                    <!-- Role Dropdown -->
+                    <select id="role-selector" class="dark:bg-gray-800/50 dark:text-white light:bg-white light:text-gray-800 rounded-lg p-2 border border-indigo-500/50 neon-glow-border text-sm">
+                        <option value="FDA">FDA Regulator</option>
+                        <option value="Manufacturer">Manufacturer</option>
+                        <option value="Distributor">Distributor</option>
+                        <option value="Pharmacy">Pharmacy</option>
+                        <option value="Patient">Patient</option>
+                    </select>
+
+                    <!-- Theme Toggle -->
+                    <!-- Adjusted theme toggle background color for light mode -->
+                    <button id="theme-toggle" class="p-2 rounded-full dark:bg-gray-800/50 dark:text-yellow-400 dark:hover:bg-gray-700/50 light:bg-gray-200 light:text-gray-700 light:hover:bg-gray-300 neon-glow-border">
+                        <i data-lucide="sun" class="w-6 h-6"></i>
+                    </button>
+                    
+                    <!-- Auth Buttons / User Display -->
+                    <div id="auth-controls" class="flex items-center space-x-2">
+                        <button id="login-btn" class="px-3 py-1 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Login</button>
+                        <button id="signup-btn" class="px-3 py-1 bg-transparent border border-indigo-400 text-indigo-400 rounded-lg text-sm hover:bg-indigo-500">Sign Up</button>
+                        <span id="user-display" class="hidden text-sm text-red-800 px-3 py-1 bg-red-900/40 rounded-lg"></span>
+                        <button id="logout-btn" class="hidden px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">Logout</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- View Containers -->
+            <div id="view-container">
+                <!-- Authentication Views -->
+                <section id="login" class="view hidden space-y-6">
+                    <div class="max-w-md mx-auto glass-card p-8 rounded-xl">
+                        <h2 class="text-2xl font-bold mb-4 text-indigo-400">Sign In</h2>
+                        <form id="login-form" class="space-y-4">
+                            <label class="block">
+                                <span class="text-sm text-gray-400">Email</span>
+                                <input id="login-email" type="email" required class="w-full p-2 rounded-lg dark:bg-gray-800/50 light:bg-white border" />
+                            </label>
+                            <label class="block">
+                                <span class="text-sm text-gray-400">Password</span>
+                                <input id="login-password" type="password" required class="w-full p-2 rounded-lg dark:bg-gray-800/50 light:bg-white border" />
+                            </label>
+                            <div class="flex justify-between items-center">
+                                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Login</button>
+                                <a href="#" id="to-signup" class="text-sm text-indigo-400">Create account</a>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+                <!-- Live Map Panel (Full Width) -->
+                <section id="live-map-panel" class="view hidden space-y-6">
+                    <h2 class="text-3xl font-bold dark:text-white light:text-[--text-color-dark] mb-4">Live Map View</h2>
+                    <div class="glass-card p-4 rounded-xl map-panel">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <div class="panel-title">Real-time Location Map</div>
+                                <div class="text-sm text-gray-400">Shows live location updates and recent path history.</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div id="follow-toggle" class="control-chip">Follow: <span id="follow-state">On</span></div>
+                                <button id="clear-history" class="px-3 py-1 bg-red-600 text-white rounded-md text-sm">Clear History</button>
+                            </div>
+                        </div>
+                        <div id="live-map-view" class="w-full bg-gray-200"></div>
+                                <!-- image preview for real-time map (will be updated by JS) -->
+                                <!-- The interactive Leaflet container (live-loc-mapview) may be shown elsewhere; this image provides a lightweight, updating snapshot. -->
+                                <div id="live-map-image-wrap" class="w-full">
+                                    <img id="live-map-image" alt="Live map image" class="w-full rounded-md shadow-md" style="display:none;" />
+                                </div>
+                    </div>
+                </section>
+
+                <section id="signup" class="view hidden space-y-6">
+                    <div class="max-w-md mx-auto glass-card p-8 rounded-xl">
+                        <h2 class="text-2xl font-bold mb-4 text-indigo-400">Create Account</h2>
+                        <form id="signup-form" class="space-y-4">
+                            <label class="block">
+                                <span class="text-sm text-gray-400">Email</span>
+                                <input id="signup-email" type="email" required class="w-full p-2 rounded-lg dark:bg-gray-800/50 light:bg-white border" />
+                            </label>
+                            <label class="block">
+                                <span class="text-sm text-gray-400">Password</span>
+                                <input id="signup-password" type="password" required class="w-full p-2 rounded-lg dark:bg-gray-800/50 light:bg-white border" />
+                            </label>
+                            <label class="block">
+                                <span class="text-sm text-gray-400">Confirm Password</span>
+                                <input id="signup-confirm" type="password" required class="w-full p-2 rounded-lg dark:bg-gray-800/50 light:bg-white border" />
+                            </label>
+                            <div class="flex justify-between items-center">
+                                <button type="submit" class="px-4 py-2 bg-indigo-600 text-black rounded-lg">Sign Up</button>
+                                <a href="#" id="to-login" class="text-sm text-black-400">Already have an account?</a>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+                <!-- Overview Panel -->
+                <section id="overview" class="view space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="kpi-card glass-card p-6 rounded-xl animate-pulse-slow">
+                            <i data-lucide="package" class="w-8 h-8 text-white+400 mb-3"></i>
+                            <p class="text-sm text-purple-400 uppercase">Total Batches</p>
+                            <p id="kpi-batches" class="text-3xl font-bold neon-text">124</p>
+                        </div>
+                        <div class="kpi-card glass-card p-6 rounded-xl animate-pulse-slow">
+                            <i data-lucide="check-circle" class="w-8 h-8 text-green-400 mb-3"></i>
+                            <p class="text-sm text-purple-400 uppercase">FDA Approved</p>
+                            <p id="kpi-approved" class="text-3xl font-bold neon-text">98</p>
+                        </div>
+                        <div class="kpi-card glass-card p-6 rounded-xl animate-pulse-slow">
+                            <i data-lucide="zap" class="w-8 h-8 text-red-400 mb-3"></i>
+                            <p class="text-sm text-purple-400 uppercase">Active Alerts</p>
+                            <p id="kpi-alerts" class="text-3xl font-bold neon-text">3</p>
+                        </div>
+                        <div class="kpi-card glass-card p-6 rounded-xl animate-pulse-slow">
+                            <i data-lucide="truck" class="w-8 h-8 text-purple-400 mb-3"></i>
+                            <p class="text-sm text-purple-400 uppercase">In-Transit Drugs</p>
+                            <p id="kpi-transit" class="text-3xl font-bold neon-text">2,450</p>
+                        </div>
+                    </div>
+
+                    <!-- Adjusted banner styling for light mode compatibility -->
+                    <div id="system-status-banner" class="glass-card p-6 rounded-xl border-l-4 border-green-400 shadow-lg dark:text-white light:text-[--text-color-dark] font-semibold">
+                        <p class="flex items-center text-lg">
+                            <i data-lucide="shield" class="w-6 h-6 mr-3 text-indigo-400"></i>
+                            System Status: All systems nominal. No critical tampering detected.
+                        </p>
+                    </div>
+
+                    <!-- Mini IoT + Blockchain Overview -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-4 text-indigo-400">Real-time Temp (°C)</h3>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <div class="text-sm text-gray-400">Current Room</div>
+                                        <div class="text-xs text-gray-400">Climate summary</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div id="overview-live-temp" class="text-2xl font-bold neon-text">-- °C</div>
+                                        <div class="text-sm text-gray-400 mt-1">
+                                            <span id="overview-humidity">-- %</span>
+                                            &nbsp;|&nbsp;
+                                            <span id="overview-pressure">-- hPa</span>
+                                        </div>
+                                        <div id="overview-source" class="text-xs text-gray-400 mt-1">Source: --</div>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-sm text-gray-300" id="overview-report">--</div>
+                                <div class="mt-3 flex items-center space-x-4">
+                                    <div style="width:96px; height:96px;">
+                                        <canvas id="overviewHumidityChart" width="96" height="96"></canvas>
+                                    </div>
+                                    <div class="text-sm text-gray-300">
+                                        <div class="font-semibold">Humidity</div>
+                                        <div id="overview-humidity-label" class="text-xs text-gray-400">-- %</div>
+                                        <div class="text-xs text-gray-500 mt-1">Realtime humidity gauge</div>
+                                    </div>
+                                </div>
+                                <div class="chart-container"><canvas id="tempChartMini"></canvas></div>
+                        </div>
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-4 text-purple-400">Latest Transaction Hash</h3>
+                            <p id="latest-hash" class="font-mono text-sm break-all neon-text text-purple-300">0x...awaiting-first-block</p>
+                            <button onclick="addTransaction('Manufacturer', 'BAT-001')" class="mt-4 px-4 py-2 bg-indigo-600 rounded-lg text-white hover:bg-indigo-700 transition">Simulate Tx</button>
+                        </div>
+                    </div>
+
+                    <!-- Overview Enhancements: Quick Actions, Recent Activity, Batch Search -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-400">Quick Actions</h3>
+                            <div class="space-y-3">
+                                <button id="export-climate-btn" class="w-full py-2 bg-indigo-600 text-white rounded-lg">Export Climate (JSON)</button>
+                                <button id="export-loc-btn" class="w-full py-2 bg-purple-600 text-white rounded-lg">Export Location History (JSON)</button>
+                                <button id="open-live-map-btn" class="w-full py-2 bg-blue-600 text-white rounded-lg">Open Live Map</button>
+                                <button id="simulate-now-btn" class="w-full py-2 bg-green-600 text-white rounded-lg">Simulate Temp Now</button>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-3 text-purple-400">Recent Activity</h3>
+                            <div id="recent-activity-list" class="text-sm text-black-300 max-h-56 overflow-y-auto space-y-2">
+                                <!-- Recent items injected here -->
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-3 text-green-400">Batch Search & Quick Create</h3>
+                            <div class="mb-3">
+                                <input id="batch-search-input" type="text" placeholder="Enter Batch ID (e.g. BAT-001)" class="w-full p-2 rounded-lg mb-2 border" />
+                                <div class="flex space-x-2">
+                                    <button id="batch-search-btn" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg">Search</button>
+                                    <button id="batch-create-toggle" class="py-2 px-3 bg-gray-600 text-white rounded-lg">New</button>
+                                </div>
+                            </div>
+                            <div id="batch-create-form" class="hidden mt-3">
+                                <input id="batch-create-id" type="text" placeholder="Batch ID" class="w-full p-2 rounded-lg mb-2 border" />
+                                <input id="batch-create-product" type="text" placeholder="Product name" class="w-full p-2 rounded-lg mb-2 border" />
+                                <input id="batch-create-manufacturer" type="text" placeholder="Manufacturer" class="w-full p-2 rounded-lg mb-2 border" />
+                                <button id="batch-create-btn" class="w-full py-2 bg-green-600 text-white rounded-lg">Create Batch</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- IoT Monitor Panel -->
+                <section id="iot-monitor" class="view hidden space-y-6">
+                    <h2 class="text-3xl font-bold dark:text-white light:text-[--text-color-dark] mb-6">Real-time IoT Monitoring</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Live Room Temperature & Location Card -->
+                        <div class="glass-card p-6 rounded-xl lg:col-span-1" id="live-room-card">
+                            <div class="flex items-center mb-4">
+                                <i data-lucide="thermometer" class="w-6 h-6 mr-2 text-indigo-400"></i>
+                                <h3 class="text-xl font-semibold text-indigo-400">Live Room Temperature</h3>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p id="live-room-temp" class="text-4xl font-bold neon-text">-- °C</p>
+                                    <p id="live-temp-source" class="text-sm text-gray-400 mt-1">Source: waiting...</p>
+                                    <p id="live-room-updated" class="text-xs text-gray-400 mt-1">Last updated: --</p>
+                                </div>
+                                <div class="text-right">
+                                    <button id="refresh-temp-btn" class="px-3 py-2 bg-indigo-600 text-white rounded-lg">Refresh</button>
+                                    <button id="manual-temp-btn" class="ml-2 px-3 py-2 bg-gray-600 text-white rounded-lg">Set</button>
+                                </div>
+                            </div>
+                            <p id="live-temp-note" class="text-xs text-gray-400 mt-3">If your browser/device does not expose a temperature sensor, the dashboard will use location-based weather as an approximation.</p>
+                        </div>
+                        <div class="glass-card p-6 rounded-xl lg:col-span-1">
+                            <div class="flex items-center mb-4">
+                                <i data-lucide="thermometer" class="w-6 h-6 mr-2 text-red-400"></i>
+                                <h3 class="text-xl font-semibold text-red-400">Temperature (°C) <span id="live-temp-value" class="ml-3 text-xl font-bold neon-text">-- °C</span></h3>
+                            </div>
+                            <div class="chart-container"><canvas id="tempChart"></canvas></div>
+                        </div>
+                        <div class="glass-card p-6 rounded-xl lg:col-span-1">
+                            <div class="flex items-center mb-4">
+                                <i data-lucide="cloud" class="w-6 h-6 mr-2 text-blue-400"></i>
+                                <h3 class="text-xl font-semibold text-blue-400">Humidity (%) <span id="live-humidity-value" class="ml-3 text-xl font-bold neon-text">-- %</span></h3>
+                            </div>
+                            <div class="chart-container"><canvas id="humidityChart"></canvas></div>
+                        </div>
+                        <div class="glass-card p-6 rounded-xl lg:col-span-1">
+                            <div class="flex items-center mb-4">
+                                <i data-lucide="pressure" class="w-6 h-6 mr-2 text-green-400"></i>
+                                <h3 class="text-xl font-semibold text-green-400">Pressure (hPa) <span id="live-pressure-value" class="ml-3 text-xl font-bold neon-text">-- hPa</span></h3>
+                            </div>
+                            <div class="chart-container"><canvas id="pressureChart"></canvas></div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card p-6 rounded-xl">
+                        <h3 class="text-xl font-semibold mb-4 text-purple-400">Anomaly Sensor Log</h3>
+                        <!-- Adjusted log background/text for light mode -->
+                        <pre id="anomaly-log" class="dark:bg-black/50 light:bg-red-50 p-4 rounded-lg text-sm font-mono max-h-48 overflow-y-auto border border-red-500/30 dark:text-red-300 light:text-red-700">
+[11:27:00] INFO: Initializing sensor array BAT-1122...
+                        </pre>
+                    </div>
+                </section>
+                
+                <!-- Blockchain Ledger Panel -->
+                <section id="blockchain" class="view hidden space-y-6">
+                    <h2 class="text-3xl font-bold dark:text-white light:text-[--text-color-dark] mb-6">Blockchain Ledger Visualization</h2>
+                    <div class="glass-card p-6 rounded-xl overflow-x-auto">
+                        <div id="blockchain-chain" class="flex space-x-8 py-4 items-center min-w-max">
+                            <!-- Blocks will be injected here -->
+                            <div class="w-32 h-16 dark:bg-gray-700/50 light:bg-gray-200 rounded-lg flex items-center justify-center text-xs font-mono chain-block neon-glow-border dark:text-white light:text-[--text-color-dark]">GENESIS BLOCK</div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card p-6 rounded-xl">
+                        <h3 class="text-xl font-semibold mb-4 text-indigo-400">Blockchain Controls</h3>
+                        <div class="flex space-x-4">
+                            <select id="tx-actor" class="dark:bg-gray-800/50 dark:text-white light:bg-white light:text-[--text-color-dark] rounded-lg p-2 border border-purple-500/50 text-sm">
+                                <option value="Manufacturer">Manufacturer</option>
+                                <option value="FDA">FDA</option>
+                                <option value="Distributor">Distributor</option>
+                                <option value="Pharmacy">Pharmacy</option>
+                            </select>
+                             <select id="tx-type" class="dark:bg-gray-800/50 dark:text-white light:bg-white light:text-[--text-color-dark] rounded-lg p-2 border border-purple-500/50 text-sm">
+                                <option value="REGISTERED">Batch Registration</option>
+                                <option value="APPROVED">FDA Approval</option>
+                                <option value="TRANSFER">Logistics Transfer</option>
+                                <option value="CONSUMED">Final Sale</option>
+                            </select>
+                            <button onclick="simulateBlockchainTx()" class="px-6 py-2 bg-purple-600 rounded-lg text-white hover:bg-purple-700 transition">Add New Block</button>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Drug Traceability Panel -->
+                <section id="traceability" class="view hidden space-y-6">
+                    <h2 class="text-3xl font-bold dark:text-white light:text-[--text-color-dark] mb-6">Drug Traceability Timeline (BAT-001)</h2>
+                    <div class="glass-card p-8 rounded-xl max-w-2xl mx-auto">
+                        <div id="live-location-details" class="mb-6">
+                            <h4 class="text-lg font-semibold mb-2 text-indigo-400">Live Location Details</h4>
+                            <p id="live-loc-text" class="text-sm text-gray-400">Location: --</p>
+                            <p class="text-sm text-gray-400">Last updated: <span id="live-loc-time">--</span></p>
+                            <p class="mt-2"><a id="live-loc-map" href="#" target="_blank" class="text-indigo-300 underline hidden">Open in Maps</a></p>
+                            <!-- Map preview (Leaflet) -->
+                            <div id="live-loc-mapview" class="mt-4 rounded-lg overflow-hidden" style="height:220px; display:none; border:1px solid rgba(255,255,255,0.04);"></div>
+                        </div>
+                        <ol id="traceability-timeline" class="relative border-l border-indigo-500 space-y-8">
+                            <!-- Timeline elements will be injected here -->
+                            <li class="mb-10 ml-6">
+                                <span class="absolute flex items-center justify-center w-6 h-6 bg-indigo-600 rounded-full -left-3 ring-8 dark:ring-gray-900 light:ring-gray-200 neon-glow-border">
+                                    <i data-lucide="factory" class="w-3 h-3 text-white"></i>
+                                </span>
+                                <h3 class="flex items-center mb-1 text-lg font-semibold dark:text-white light:text-[--text-color-dark]">GENESIS: Batch Created</h3>
+                                <time class="block mb-2 text-sm font-normal leading-none text-gray-400">Nov 01, 2025</time>
+                                <p class="text-base font-normal dark:text-gray-300 light:text-gray-700">Raw materials received and Batch ID BAT-001 registered on the ledger.</p>
+                            </li>
+                        </ol>
+                    </div>
+                </section>
+                
+                <!-- Alert Center Panel -->
+                <section id="alerts" class="view hidden space-y-6">
+                    <h2 class="text-3xl font-bold text-red-400 mb-6">Critical Alert Center</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-4">
+                            <div class="glass-card p-6 rounded-xl border-l-4 border-red-500">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-lg font-bold text-red-400 flex items-center"><i data-lucide="zap" class="w-5 h-5 mr-2"></i> CRITICAL: Temperature Breach</span>
+                                    <span class="text-sm text-gray-500">2025-11-05 11:25:30</span>
+                                </div>
+                                <p class="dark:text-gray-300 light:text-gray-700 mb-3">Batch BAT-001 temperature recorded at 11.2°C (Safe Max: 8°C). Potential spoilage risk.</p>
+                                <!-- Adjusted insight panel background/text for light mode -->
+                                <div class="dark:bg-red-900/40 light:bg-red-100 p-3 rounded-lg">
+                                    <p class="text-sm font-semibold dark:text-red-300 light:text-red-800">AI Insight:</p>
+                                    <p class="text-xs dark:text-red-200 light:text-red-600">Suggested Action: Immediately verify container refrigeration unit (ID: REF-004). Increase cooling power by 15% and log corrective action on the ledger.</p>
+                                </div>
+                            </div>
+                             <div class="glass-card p-6 rounded-xl border-l-4 border-orange-500">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-lg font-bold text-orange-400 flex items-center"><i data-lucide="shield-alert" class="w-5 h-5 mr-2"></i> HIGH: Unauthorized Location</span>
+                                    <span class="text-sm text-gray-500">2025-11-04 18:01:12</span>
+                                </div>
+                                <p class="dark:text-gray-300 light:text-gray-700 mb-3">Shipment moved outside approved geo-fence corridor (LAT: 34.00, LON: -118.00). Possible diversion.</p>
+                                <!-- Adjusted insight panel background/text for light mode -->
+                                <div class="dark:bg-orange-900/40 light:bg-orange-100 p-3 rounded-lg">
+                                    <p class="text-sm font-semibold dark:text-orange-300 light:text-orange-800">AI Insight:</p>
+                                    <p class="text-xs dark:text-orange-200 light:text-orange-600">Suggested Action: Contact logistics supervisor (ID: DTR-901). Require immediate GPS re-validation and secure the vehicle.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-1 glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-4 dark:text-white light:text-[--text-color-dark]">Alert Status Summary</h3>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex justify-between items-center text-red-400 font-semibold"><i data-lucide="zap" class="w-4 h-4 mr-2"></i> Critical: 2</li>
+                                <li class="flex justify-between items-center text-orange-400 font-semibold"><i data-lucide="shield-alert" class="w-4 h-4 mr-2"></i> High: 1</li>
+                                <li class="flex justify-between items-center text-yellow-400"><i data-lucide="clock" class="w-4 h-4 mr-2"></i> Pending Review: 5</li>
+                                <li class="flex justify-between items-center text-green-400"><i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> Resolved (24h): 14</li>
+                            </ul>
+                            <button class="mt-6 w-full py-2 bg-red-600/70 text-white rounded-lg hover:bg-red-700/70 transition">Resolve Selected</button>
+                        </div>
+                    </div>
+                </section>
+                
+                 <!-- Reports Panel -->
+                <section id="reports" class="view hidden space-y-6">
+                    <h2 class="text-3xl font-bold dark:text-white light:text-[--text-color-dark] mb-6">Reports and Live Log Viewer</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-4 text-indigo-400">Report Export Utility</h3>
+                            <p class="text-gray-400 mb-4">Generate comprehensive audit reports for FDA compliance, risk assessment, and logistics performance.</p>
+                            <div class="space-y-3">
+                                <button onclick="downloadReport('PDF')" class="w-full py-3 bg-indigo-600/70 text-white rounded-lg hover:bg-indigo-700/70 transition">Download Compliance Audit (PDF)</button>
+                                <button onclick="downloadReport('CSV')" class="w-full py-3 bg-purple-600/70 text-white rounded-lg hover:bg-purple-700/70 transition">Download IoT Data Export (CSV)</button>
+                                <button onclick="downloadReport('JSON')" class="w-full py-3 bg-gray-600/70 text-white rounded-lg hover:bg-gray-700/70 transition">Download Ledger History (JSON)</button>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card p-6 rounded-xl">
+                            <h3 class="text-xl font-semibold mb-4 text-green-400">Live System Console Log</h3>
+                            <!-- Adjusted log background/text for light mode -->
+                            <pre id="system-log" class="dark:bg-black/80 light:bg-gray-100 p-4 rounded-lg text-sm font-mono h-80 overflow-y-scroll border border-green-500/30 dark:text-green-300 light:text-green-800">
+[INIT] 2025-11-05T11:27:00Z - Starting PharmaChain Kernel...
+[API] 2025-11-05T11:27:01Z - Block validation service connected.
+[IOT] 2025-11-05T11:27:02Z - IoT stream listening on MQTT port 1883.
+[UI] 2025-11-05T11:27:03Z - Dashboard fully initialized. Awaiting user input.
+                            </pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Help / Getting Started Panel -->
+                <section id="help" class="view hidden space-y-6">
+                    <h2 class="text-3xl font-bold dark:text-white light:text-[--text-color-dark] mb-6">Help & Getting Started</h2>
+                    <div class="glass-card p-6 rounded-xl max-w-3xl mx-auto">
+                        <h3 class="text-xl font-semibold mb-3 text-indigo-400">Quick Start</h3>
+                        <ol class="list-decimal pl-5 text-sm text-gray-300 space-y-2">
+                            <li>Sign up for a demo account using <strong>Sign Up</strong> in the header.</li>
+                            <li>Sign in with your new account to enable session-specific features.</li>
+                            <li>Open the <strong>IoT Monitor</strong> to view live temperature, humidity, and pressure charts. Use <em>Refresh</em> or <em>Set</em> to manually supply a reading.</li>
+                            <li>Allow geolocation permission to enable live location and the embedded map. If denied, use manual temp entry as a fallback.</li>
+                            <li>Use the <strong>Live Map</strong> view to see your device's location in real time. Toggle <strong>Follow</strong> to lock/unlock automatic centering. Use <strong>Clear History</strong> to remove recorded points.</li>
+                        </ol>
+
+                        <h3 class="text-xl font-semibold mt-4 mb-2 text-indigo-400">Features & Notes</h3>
+                        <ul class="list-disc pl-5 text-sm text-gray-300 space-y-2">
+                            <li>This is a client-side demo: user accounts and data are stored in your browser's <code>localStorage</code>.</li>
+                            <li>Ambient temperature sensors are only available on a small set of devices; the dashboard falls back to location-based weather (Open-Meteo).</li>
+                            <li>For production, implement a secure server and do not store plaintext passwords in localStorage.</li>
+                            <li>Map tiles are loaded from OpenStreetMap via Leaflet. If tiles do not load, check network or CSP settings.</li>
+                        </ul>
+
+                        <div class="mt-6 flex space-x-3">
+                            <button onclick="switchView('overview')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Back to Overview</button>
+                            <button onclick="switchView('live-map-panel')" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Open Live Map</button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Block Details -->
+    <div id="block-modal" class="fixed inset-0 dark:bg-black/70 light:bg-black/50 z-50 flex items-center justify-center hidden">
+        <div class="glass-card p-8 rounded-xl w-full max-w-lg">
+            <h3 id="modal-title" class="text-2xl font-bold mb-4 text-indigo-400">Transaction Details</h3>
+            <!-- Adjusted modal content background/text for light mode -->
+            <pre id="modal-content" class="dark:bg-gray-800/80 light:bg-gray-100 p-4 rounded-lg text-sm font-mono max-h-96 overflow-y-auto dark:text-gray-300 light:text-[--text-color-dark]"></pre>
+            <button onclick="document.getElementById('block-modal').classList.add('hidden')" class="mt-6 w-full py-2 bg-indigo-600 rounded-lg text-white hover:bg-indigo-700 transition">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const $$ = (selector) => document.querySelectorAll(selector);
+        const $ = (selector) => document.querySelector(selector);
+        
+        // --- DATA STRUCTURES (Simulated Backend) ---
+        let currentView = 'overview';
+        let currentRole = 'FDA';
+        let latestHash = '0x0000000000000000000000000000000000000000';
+        let batches = [
+            { id: "BAT-001", product: "NeuroCalm", manufacturer: "Global Meds", status: "In Transit" },
+            { id: "BAT-002", product: "FluVax", manufacturer: "Zenith Labs", status: "FDA Approved" }
+        ];
+
+        let chain = [{
+            hash: latestHash,
+            prevHash: '0x0000000000000000000000000000000000000000',
+            data: { actor: 'SYSTEM', type: 'GENESIS', details: 'Initial Ledger Block' },
+            timestamp: new Date().toLocaleString()
+        }];
+
+        // IoT data structure for Chart.js
+        let iotData = {
+            labels: [],
+            temperature: [],
+            humidity: [],
+            pressure: [],
+        };
+
+        let charts = {}; // To store Chart.js instances
+
+        // --- UTILITY FUNCTIONS ---
+
+        /** Simple Hash Simulation (SHA-256 placeholder) */
+        const simulateHash = (data, prevHash) => {
+            const seed = data + prevHash + Math.random().toString();
+            let hash = 0;
+            for (let i = 0; i < seed.length; i++) {
+                hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+                hash |= 0; // Convert to 32bit integer
+            }
+            return '0x' + Math.abs(hash).toString(16).padStart(40, '0').substring(0, 40);
+        };
+        
+        /** Custom Toast Notification */
+        const showToast = (message, type = 'info') => {
+            const container = $('#toast-container');
+            const toast = document.createElement('div');
+            
+            let bgColor, icon;
+            if (type === 'alert') {
+                bgColor = 'bg-red-600';
+                icon = '<i data-lucide="zap" class="w-5 h-5 mr-2"></i>';
+            } else if (type === 'success') {
+                bgColor = 'bg-green-600';
+                icon = '<i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>';
+            } else {
+                bgColor = 'bg-indigo-600';
+                icon = '<i data-lucide="list" class="w-5 h-5 mr-2"></i>';
+            }
+
+            toast.className = `flex items-center p-4 rounded-xl shadow-xl text-white ${bgColor} transition-opacity duration-500 toast-anim`;
+            toast.style.willChange = 'transform, opacity';
+            toast.innerHTML = `${icon} <span class="text-sm">${message}</span>`;
+
+            // append with slight staggers for multiple toasts
+            container.appendChild(toast);
+            
+            // Re-render icons after adding to DOM
+            if (window.lucideIcons) {
+                // Since full icon rendering happens on load, this is a simplified check
+            }
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                toast.style.transform = 'translateY(-6px) scale(.98)';
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 5000);
+        };
+
+        // --- SIMPLE CLIENT-SIDE USER STORE (localStorage) ---
+        const USERS_KEY = 'pharmachain_users_v1';
+        const SESSION_KEY = 'pharmachain_session_v1';
+
+        const loadUsers = () => {
+            try {
+                const raw = localStorage.getItem(USERS_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        };
+
+        const saveUsers = (users) => {
+            localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        };
+
+        const getSession = () => {
+            try {
+                return JSON.parse(localStorage.getItem(SESSION_KEY));
+            } catch (e) { return null; }
+        };
+
+        const setSession = (user) => {
+            localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+        };
+
+        const clearSession = () => {
+            localStorage.removeItem(SESSION_KEY);
+        };
+
+        const findUserByEmail = (email) => {
+            const users = loadUsers();
+            return users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        };
+
+        const createUser = (email, password) => {
+            const users = loadUsers();
+            users.push({ email: email.toLowerCase(), password });
+            saveUsers(users);
+            return true;
+        };
+
+        const authenticateUser = (email, password) => {
+            const user = findUserByEmail(email);
+            if (!user) return false;
+            return user.password === password;
+        };
+
+        // --- UI HANDLERS ---
+
+        const switchView = (viewId) => {
+            if (viewId === currentView) return;
+
+            $$('.view').forEach(view => view.classList.add('hidden'));
+            const newView = $(`#${viewId}`);
+            if (newView) {
+                newView.classList.remove('hidden');
+                // animate the entering view
+                newView.classList.add('view-enter');
+                setTimeout(() => newView.classList.remove('view-enter'), 420);
+                currentView = viewId;
+                // Safely set the title, checking for an H2 in the view
+                const titleElement = newView.querySelector('h2');
+                $('#main-title').textContent = titleElement ? titleElement.textContent : viewId.toUpperCase();
+            }
+            
+            // Update active link classes based on current theme
+            $$('.nav-link').forEach(link => {
+                link.classList.remove('bg-indigo-700/50', 'neon-glow-border', 'bg-indigo-200');
+            });
+            const activeLink = $(`[data-view="${viewId}"]`);
+            const isDark = $('html').classList.contains('dark');
+            
+            if (activeLink) {
+                if (isDark) {
+                    activeLink.classList.add('bg-indigo-700/50', 'neon-glow-border');
+                } else {
+                    activeLink.classList.add('bg-indigo-200', 'neon-glow-border');
+                }
+            }
+            
+            // Close sidebar on mobile
+            if (window.innerWidth < 768) {
+                $('#sidebar').classList.add('-translate-x-full');
+            }
+            // Update any UI that depends on the current view (e.g., hide the small map address in Live Map view)
+            try { updateLocationDisplayVisibility(); } catch (e) { /* ignore if not defined yet */ }
+        };
+        
+        const updateRole = (role) => {
+            currentRole = role;
+            $('#current-role-display').textContent = role;
+            showToast(`Dashboard view switched to: ${role}`, 'info');
+            // Role logic could hide/show panels here, but for now we keep all visible for demo
+        };
+
+        // --- DARK/LIGHT MODE TOGGLE LOGIC ---
+        const toggleTheme = () => {
+            const html = $('html');
+            const isDark = html.classList.contains('dark');
+            
+            // Toggle classes on <html>
+            html.classList.toggle('dark', !isDark);
+            html.classList.toggle('light', isDark);
+
+            // Update theme toggle icon
+            const icon = isDark ? 'moon' : 'sun';
+            $('#theme-toggle').innerHTML = `<i data-lucide="${icon}" class="w-6 h-6"></i>`;
+            
+            // Re-apply active nav link style based on the new theme
+            $$('.nav-link').forEach(link => {
+                link.classList.remove('bg-indigo-700/50', 'neon-glow-border', 'bg-indigo-200');
+            });
+            const activeLink = $(`[data-view="${currentView}"]`);
+            if (activeLink) {
+                if (isDark) {
+                    activeLink.classList.add('bg-indigo-200', 'neon-glow-border');
+                } else {
+                    activeLink.classList.add('bg-indigo-700/50', 'neon-glow-border');
+                }
+            }
+
+            // Update charts colors immediately
+            updateChartColors(isDark);
+            
+            showToast(`Switched to ${isDark ? 'Light' : 'Dark'} Mode`, 'info');
+        };
+
+        // --- BLOCKCHAIN SIMULATION ---
+
+        const addTransaction = (actor, batchId, type, details) => {
+            const prevBlock = chain[0];
+            const timestamp = new Date().toLocaleString();
+            
+            const newData = { actor, batchId, type, details };
+            const newHash = simulateHash(JSON.stringify(newData), prevBlock.hash);
+
+            const newBlock = {
+                hash: newHash,
+                prevHash: prevBlock.hash,
+                data: newData,
+                timestamp: timestamp
+            };
+
+            chain.unshift(newBlock); // Add to the beginning for easier visualization
+            latestHash = newHash;
+
+            updateBlockchainVisualization();
+            updateKpis();
+            
+            $('#latest-hash').textContent = latestHash.substring(0, 8) + '...';
+            
+            if(type === 'APPROVED') {
+                showToast(`${batchId} approved by ${actor} via Smart Contract!`, 'success');
+            } else if (type === 'TRANSFER') {
+                showToast(`${batchId} transferred to new custodian. Ledger updated.`, 'info');
+            }
+            logSystemMessage(`[BC] New Block mined. Hash: ${newHash.substring(0, 10)}...`);
+        };
+        
+        const simulateBlockchainTx = () => {
+            const actor = $('#tx-actor').value;
+            const type = $('#tx-type').value;
+            const batchId = batches[0].id; // Use first batch for simplicity
+
+            let details = `${type} transaction by ${actor}.`;
+            if (type === 'APPROVED') details = 'FDA validation complete. SC executed.';
+            if (type === 'TRANSFER') details = `Ownership transfer from ${actor} to next stage.`;
+            
+            addTransaction(actor, batchId, type, details);
+            updateTraceabilityTimeline(type, actor);
+        };
+        
+        const updateBlockchainVisualization = () => {
+            const container = $('#blockchain-chain');
+            container.innerHTML = ''; // Clear existing blocks
+
+            // Reverse the array for chronological display (oldest on left)
+            const displayChain = [...chain].reverse(); 
+            const isDark = $('html').classList.contains('dark');
+            // Use CSS variables for block classes
+            const blockClasses = isDark ? 'dark:bg-gray-700/50 dark:text-white' : 'light:bg-gray-200 light:text-[--text-color-dark]';
+
+            displayChain.forEach((block, index) => {
+                const blockDiv = document.createElement('div');
+                blockDiv.className = `chain-block glass-card p-4 rounded-xl w-48 shrink-0 cursor-pointer hover:bg-indigo-900/50 transition duration-300 pop-in ${blockClasses}`;
+                blockDiv.title = `Hash: ${block.hash}\nDetails: ${block.data.type}`;
+                blockDiv.innerHTML = `
+                    <p class="text-xs text-indigo-400 font-semibold mb-1">${block.data.type}</p>
+                    <p class="text-sm font-bold truncate">${block.data.batchId || 'N/A'}</p>
+                    <p class="font-mono text-[10px] text-gray-400 mt-2">Hash: ${block.hash.substring(0, 10)}...</p>
+                    <p class="text-[10px] text-purple-400">${block.data.actor}</p>
+                `;
+                blockDiv.onclick = () => showBlockDetails(block);
+                container.appendChild(blockDiv);
+
+                // Add a link/arrow between blocks (except the last one)
+                if (index < displayChain.length - 1) {
+                    const arrowDiv = document.createElement('div');
+                    arrowDiv.className = 'chain-link w-8 h-1 bg-indigo-500/70 shrink-0';
+                    arrowDiv.innerHTML = '<div class="w-0 h-0 border-t-4 border-b-4 border-transparent border-l-8 border-l-indigo-500/70 -translate-x-1"></div>';
+                    container.appendChild(arrowDiv);
+                }
+            });
+
+            // Scroll to the latest block (end of the chain in the reversed array)
+            container.scrollLeft = container.scrollWidth; 
+        };
+        
+        const showBlockDetails = (block) => {
+            $('#modal-title').textContent = `${block.data.type} Details`;
+            $('#modal-content').textContent = JSON.stringify(block, null, 2);
+            $('#block-modal').classList.remove('hidden');
+        };
+        
+        // --- TRACEABILITY TIMELINE ---
+
+        const updateTraceabilityTimeline = (type, actor) => {
+            const timeline = $('#traceability-timeline');
+            let iconData, title, details;
+            
+            if (type === 'APPROVED') {
+                iconData = { icon: 'landmark', color: 'bg-green-600', ring: 'dark:ring-gray-900 light:ring-gray-200' };
+                title = 'FDA: Batch Approved';
+                details = 'Regulatory compliance confirmed via Smart Contract.';
+            } else if (type === 'TRANSFER' && actor === 'Manufacturer') {
+                iconData = { icon: 'truck', color: 'bg-blue-600', ring: 'dark:ring-gray-900 light:ring-gray-200' };
+                title = 'TRANSFER: Manufacturer to Distributor';
+                details = 'Batch is now in-transit under Distributor custody.';
+            } else if (type === 'TRANSFER' && actor === 'Distributor') {
+                iconData = { icon: 'building', color: 'bg-purple-600', ring: 'dark:ring-gray-900 light:ring-gray-200' };
+                title = 'TRANSFER: Distributor to Pharmacy';
+                details = 'Last-mile logistics initiated. IoT monitoring active.';
+            } else if (type === 'CONSUMED') {
+                 iconData = { icon: 'qr-code', color: 'bg-pink-600', ring: 'dark:ring-gray-900 light:ring-gray-200' };
+                title = 'FINAL: Patient Verification/Dispensed';
+                details = 'Drug consumed/dispensed. Full chain verifiable via QR code.';
+            } else {
+                return; // Ignore other types for the timeline
+            }
+            
+            const isDark = $('html').classList.contains('dark');
+            const textColor = isDark ? 'dark:text-white' : 'light:text-[--text-color-dark]';
+            const detailColor = isDark ? 'dark:text-gray-300' : 'light:text-gray-700';
+
+            const newEntry = document.createElement('li');
+            newEntry.className = 'mb-10 ml-6';
+            newEntry.innerHTML = `
+                <span class="absolute flex items-center justify-center w-6 h-6 ${iconData.color} rounded-full -left-3 ring-8 ${iconData.ring} neon-glow-border">
+                    <i data-lucide="${iconData.icon}" class="w-3 h-3 text-white"></i>
+                </span>
+                <h3 class="flex items-center mb-1 text-lg font-semibold ${textColor}">${title}</h3>
+                <time class="block mb-2 text-sm font-normal leading-none text-gray-400">${new Date().toLocaleString()}</time>
+                <p class="text-base font-normal ${detailColor}">${details}</p>
+            `;
+            timeline.appendChild(newEntry);
+        };
+
+
+        // --- IOT SIMULATION & CHART.JS ---
+        
+        // This function dynamically sets the chart colors based on the current theme
+        const updateChartColors = (isDark) => {
+             const textColor = isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)';
+             const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+             Object.values(charts).forEach(chart => {
+                if (chart && chart.options && chart.options.scales) {
+                    chart.options.scales.x.ticks.color = textColor;
+                    chart.options.scales.y.ticks.color = textColor;
+                    chart.options.scales.y.grid.color = gridColor;
+                    chart.update();
+                }
+            });
+        };
+
+        const initializeCharts = () => {
+            // baseConfig now accepts 'color' as an RGB component string (e.g., '252, 165, 165')
+            const baseConfig = (label, color, borderColor, fill = true) => ({
+                type: 'line',
+                data: {
+                    labels: iotData.labels,
+                    datasets: [{
+                        label: label,
+                        data: iotData[label.toLowerCase()],
+                        borderColor: borderColor,
+                        // Correctly using rgba format for the gradient stops
+                        backgroundColor: (context) => {
+                            const gradient = context.chart.ctx.createLinearGradient(0, 0, 0, 200);
+                            gradient.addColorStop(0, `rgba(${color}, 0.7)`); 
+                            gradient.addColorStop(1, `rgba(${color}, 0.0)`);
+                            return gradient;
+                        },
+                        borderWidth: 2,
+                        fill: fill,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 1000 },
+                    scales: {
+                        x: { display: false, ticks: { color: 'rgba(255, 255, 255, 0.7)' } }, // Default dark mode color
+                        y: { 
+                            ticks: { color: 'rgba(255, 255, 255, 0.7)' }, // Default dark mode color
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' } // Default dark mode color
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Full Charts - passing only RGB components
+            charts.temp = new Chart($('#tempChart'), baseConfig('Temperature', '252, 165, 165', '#f87171')); // Red
+            charts.humidity = new Chart($('#humidityChart'), baseConfig('Humidity', '147, 197, 253', '#60a5fa')); // Blue
+            charts.pressure = new Chart($('#pressureChart'), baseConfig('Pressure', '110, 231, 183', '#34d399')); // Green
+
+            // Mini Chart - passing only RGB components
+            charts.tempMini = new Chart($('#tempChartMini'), baseConfig('Temperature', '129, 140, 248', '#818cf8')); // Indigo
+
+            // Overview Humidity Doughnut
+            try {
+                const ctx = document.getElementById('overviewHumidityChart');
+                if (ctx) {
+                    charts.overviewHumidity = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Humidity', 'Remaining'],
+                            datasets: [{
+                                data: [0, 100],
+                                backgroundColor: ['rgba(59,130,246,0.9)', 'rgba(203,213,225,0.35)'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: false,
+                            maintainAspectRatio: false,
+                            cutout: '70%',
+                            plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                        }
+                    });
+                }
+            } catch (e) { console.warn('overview humidity chart init failed', e); }
+        };
+
+        const updateIotData = () => {
+            const now = new Date();
+            const time = now.toLocaleTimeString();
+
+            // Simulate slight random walk around a target (4.0 - 8.0)
+            const lastTemp = iotData.temperature.length > 0 ? parseFloat(iotData.temperature[iotData.temperature.length - 1]) : 5.0;
+            const newTemp = Math.max(1.0, Math.min(12.0, lastTemp + (Math.random() - 0.5) * 0.8)); // Add variation
+            
+            const newHumidity = Math.max(30.0, Math.min(65.0, 45.0 + Math.random() * 10 - 5));
+            const newPressure = Math.max(990.0, Math.min(1020.0, 1005.0 + Math.random() * 10 - 5));
+
+            iotData.labels.push(time);
+            iotData.temperature.push(newTemp.toFixed(1));
+            iotData.humidity.push(newHumidity.toFixed(1));
+            iotData.pressure.push(newPressure.toFixed(1));
+
+            // Update overview numeric display if present
+            const overviewTempEl = $('#overview-live-temp');
+            if (overviewTempEl) overviewTempEl.textContent = newTemp.toFixed(1) + ' °C';
+            const overviewHumEl = $('#overview-humidity');
+            if (overviewHumEl) overviewHumEl.textContent = newHumidity.toFixed(0) + ' %';
+            const overviewHumLabel = $('#overview-humidity-label');
+            if (overviewHumLabel) overviewHumLabel.textContent = newHumidity.toFixed(0) + ' %';
+            const overviewPresEl = $('#overview-pressure');
+            if (overviewPresEl) overviewPresEl.textContent = newPressure.toFixed(0) + ' hPa';
+            const overviewSourceEl = $('#overview-source');
+            if (overviewSourceEl) overviewSourceEl.textContent = 'Source: simulated';
+            const overviewReportEl = $('#overview-report');
+            if (overviewReportEl) overviewReportEl.textContent = 'Simulated conditions (demo)';
+            // Update live-room timestamp if present
+            const updatedEl = $('#live-room-updated'); if (updatedEl) updatedEl.textContent = 'Last updated: ' + new Date().toLocaleString();
+            // Update overview humidity donut chart if present
+            try {
+                if (charts.overviewHumidity && charts.overviewHumidity.data && charts.overviewHumidity.data.datasets) {
+                    const val = Math.max(0, Math.min(100, Math.round(newHumidity)));
+                    charts.overviewHumidity.data.datasets[0].data = [val, 100 - val];
+                    charts.overviewHumidity.update();
+                }
+            } catch (e) { console.warn('update overview donut failed', e); }
+
+            // Keep only the last 30 points
+            const maxPoints = 30;
+            if (iotData.labels.length > maxPoints) {
+                for (const key in iotData) {
+                    if (Array.isArray(iotData[key])) {
+                        iotData[key].shift();
+                    }
+                }
+            }
+            
+            // Update charts
+            Object.values(charts).forEach(chart => chart.update());
+            
+            // Anomaly/Alert Detection
+            if (newTemp > 8.0 || newTemp < 2.0) {
+                const anomalyMsg = `[ALERT] ${time}: Temp violation: ${newTemp.toFixed(1)}°C. Outside safe range [2-8°C].`;
+                $('#anomaly-log').textContent = anomalyMsg + '\n' + $('#anomaly-log').textContent;
+                $('#status-text').textContent = 'ALERT';
+                $('#status-light').classList.remove('bg-green-700/50', 'text-green-300');
+                $('#status-light').classList.add('bg-red-700/50', 'text-red-300');
+                $('#system-status-banner').innerHTML = `<p class="flex items-center text-lg"><i data-lucide="zap" class="w-6 h-6 mr-3 text-red-400"></i> ALERT: CRITICAL Temperature Breach. Check refrigeration unit.</p>`;
+                logSystemMessage(`[CRIT] Temp anomaly detected: ${newTemp.toFixed(1)}C`);
+                showToast(`CRITICAL: Temperature Breach at ${newTemp.toFixed(1)}°C`, 'alert');
+                
+                // Update KPI for Active Alerts
+                const currentAlerts = parseInt($('#kpi-alerts').textContent) + 1;
+                $('#kpi-alerts').textContent = currentAlerts;
+
+            } else {
+                if ($('#status-text').textContent === 'ALERT') {
+                    // Simple logic to revert status once the temp is back in range
+                    $('#status-text').textContent = 'SECURE';
+                    $('#status-light').classList.remove('bg-red-700/50', 'text-red-300');
+                    $('#status-light').classList.add('bg-green-700/50', 'text-green-300');
+                    $('#system-status-banner').innerHTML = `<p class="flex items-center text-lg"><i data-lucide="shield" class="w-6 h-6 mr-3 text-green-400"></i> System Status: All systems nominal. No critical tampering detected.</p>`;
+                }
+            }
+        };
+        
+        // --- SYSTEM LOGS ---
+        const logSystemMessage = (message) => {
+            const logElement = $('#system-log');
+            const now = new Date().toISOString().substring(11, 19);
+            logElement.textContent = `[${now}] ${message}\n` + logElement.textContent;
+        };
+
+        // --- KPI Update ---
+        const updateKpis = () => {
+            $('#kpi-batches').textContent = batches.length.toString();
+            $('#kpi-approved').textContent = chain.filter(b => b.data.type === 'APPROVED').length.toString();
+        }
+
+        // --- AUTH UI UPDATE ---
+        const updateAuthUI = () => {
+            const session = getSession();
+            const userDisplay = $('#user-display');
+            const loginBtn = $('#login-btn');
+            const signupBtn = $('#signup-btn');
+            const logoutBtn = $('#logout-btn');
+
+            if (session && session.email) {
+                if (userDisplay) {
+                    userDisplay.textContent = session.email.split('@')[0];
+                    userDisplay.classList.remove('hidden');
+                }
+                if (logoutBtn) logoutBtn.classList.remove('hidden');
+                if (loginBtn) loginBtn.classList.add('hidden');
+                if (signupBtn) signupBtn.classList.add('hidden');
+            } else {
+                if (userDisplay) userDisplay.classList.add('hidden');
+                if (logoutBtn) logoutBtn.classList.add('hidden');
+                if (loginBtn) loginBtn.classList.remove('hidden');
+                if (signupBtn) signupBtn.classList.remove('hidden');
+            }
+        }
+
+        // --- REPORT DOWNLOAD SIMULATION ---
+        const downloadReport = (format) => {
+            showToast(`Generating and exporting report in ${format} format...`, 'info');
+            logSystemMessage(`[REPORT] Export requested for ${format}. Simulating download.`);
+        }
+        
+        // --- AUTH (Login / Sign Up) HANDLERS ---
+        const handleLoginSubmit = (e) => {
+            e.preventDefault();
+            const email = ($('#login-email') && $('#login-email').value) || '';
+            const password = ($('#login-password') && $('#login-password').value) || '';
+
+            if (!email || !password) {
+                showToast('Please enter email and password.', 'alert');
+                return;
+            }
+
+            if (!authenticateUser(email, password)) {
+                showToast('Invalid credentials. If you do not have an account, please sign up.', 'alert');
+                logSystemMessage(`[AUTH] Failed login attempt: ${email}`);
+                return;
+            }
+
+            // Successful login
+            setSession({ email: email.toLowerCase() });
+            updateAuthUI();
+            showToast(`Welcome back, ${email.split('@')[0]}!`, 'success');
+            logSystemMessage(`[AUTH] User signed in: ${email}`);
+            switchView('overview');
+        };
+
+        const handleSignupSubmit = (e) => {
+            e.preventDefault();
+            const email = ($('#signup-email') && $('#signup-email').value) || '';
+            const password = ($('#signup-password') && $('#signup-password').value) || '';
+            const confirm = ($('#signup-confirm') && $('#signup-confirm').value) || '';
+
+            if (!email || !password || !confirm) {
+                showToast('Please complete all fields.', 'alert');
+                return;
+            }
+            if (password !== confirm) {
+                showToast('Passwords do not match.', 'alert');
+                return;
+            }
+
+            if (findUserByEmail(email)) {
+                showToast('An account with that email already exists. Please login.', 'alert');
+                return;
+            }
+
+            createUser(email, password);
+            // Do NOT auto-login after signup — require explicit login
+            // Clear sensitive fields
+            const signupEmailEl = $('#signup-email');
+            const signupPassEl = $('#signup-password');
+            const signupConfirmEl = $('#signup-confirm');
+            if (signupEmailEl) signupEmailEl.value = '';
+            if (signupPassEl) signupPassEl.value = '';
+            if (signupConfirmEl) signupConfirmEl.value = '';
+
+            showToast('Account created. Please sign in to continue.', 'success');
+            logSystemMessage(`[AUTH] New account created: ${email}`);
+            switchView('login');
+        };
+        
+        // --- INITIALIZATION ---
+
+        // --- LIVE LOCATION & TEMPERATURE HELPERS ---
+        let lastKnownLocation = null; // { lat, lon, timestamp }
+
+        // Leaflet map/marker references
+        let _leafletMap = null;
+        let _leafletMarker = null;
+    let _leafletPolyline = null;
+    const LOCATION_HISTORY_KEY = 'pharmachain_loc_history_v1';
+    let locationHistory = []; // [{lat, lon, ts}]
+    let followEnabled = true; // controls automatic recentering when new points arrive
+    // Optional: provide your Google Static Maps API key here to enable small static-preview images
+    // Note: using Google Static Maps requires an API key and may incur usage costs. Leave empty to disable.
+    const GOOGLE_STATIC_MAPS_API_KEY = '';
+
+    const buildGoogleStaticMapUrl = (lat, lon, opts = {}) => {
+        // opts: { zoom, width, height, maptype }
+        if (!GOOGLE_STATIC_MAPS_API_KEY) return null;
+        const z = opts.zoom || 15;
+        const w = opts.width || 300;
+        const h = opts.height || 120;
+        const maptype = opts.maptype || 'satellite';
+        const marker = `&markers=color:red%7C${encodeURIComponent(lat)},${encodeURIComponent(lon)}`;
+        return `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(lat)},${encodeURIComponent(lon)}&zoom=${z}&size=${w}x${h}&maptype=${maptype}${marker}&key=${GOOGLE_STATIC_MAPS_API_KEY}`;
+    };
+
+    const buildOsmStaticMapUrl = (lat, lon, opts = {}) => {
+        // OpenStreetMap static map service (no-key, subject to usage policies)
+        const z = opts.zoom || 15;
+        const w = opts.width || 600;
+        const h = opts.height || 300;
+        // staticmap.openstreetmap.de supports size up to 2048x2048; marker in format 'lat,lon,markerType'
+        const marker = `&markers=${encodeURIComponent(lat)},${encodeURIComponent(lon)},red-pushpin`;
+        return `https://staticmap.openstreetmap.de/staticmap.php?center=${encodeURIComponent(lat)},${encodeURIComponent(lon)}&zoom=${z}&size=${w}x${h}${marker}`;
+    };
+
+    const updateLiveMapImage = (lat, lon, opts = { zoom: 15, width: 800, height: 360, maptype: 'satellite' }) => {
+        try {
+            const img = document.getElementById('live-map-image');
+            if (!img) return;
+            // Choose Google (if key) otherwise OSM fallback
+            let url = null;
+            if (GOOGLE_STATIC_MAPS_API_KEY) {
+                url = buildGoogleStaticMapUrl(lat, lon, opts);
+            } else {
+                // Try OSM fallback with similar parameters
+                url = buildOsmStaticMapUrl(lat, lon, { zoom: opts.zoom, width: opts.width || 800, height: opts.height || 360 });
+            }
+            if (!url) return;
+            // Add a cache-busting timestamp to ensure updated image is fetched
+            const sep = url.includes('?') ? '&' : '?';
+            img.src = url + sep + 'ts=' + Date.now();
+            img.style.display = 'block';
+            return img.src;
+        } catch (e) { console.warn('updateLiveMapImage failed', e); }
+    };
+
+        const initLeafletMap = (containerId = 'live-loc-mapview') => {
+            try {
+                if (typeof L === 'undefined') return null;
+                if (_leafletMap) return _leafletMap;
+                const map = L.map(containerId, { zoomControl: false, attributionControl: false }).setView([0,0], 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                }).addTo(map);
+                _leafletMap = map;
+                return map;
+            } catch (e) {
+                console.warn('Leaflet init error', e);
+                return null;
+            }
+        };
+
+        const updateMapMarker = (lat, lon, sensorData = null) => {
+            try {
+                const mapEl = document.getElementById('live-loc-mapview');
+                if (!mapEl) return;
+                mapEl.style.display = 'block';
+                const map = initLeafletMap('live-loc-mapview');
+                if (!map) return;
+                if (_leafletMarker) {
+                    _leafletMarker.setLatLng([lat, lon]);
+                } else {
+                    _leafletMarker = L.marker([lat, lon]).addTo(map);
+                }
+                // Add to location history and redraw polyline (include any sensor data)
+                addToLocationHistory(lat, lon, sensorData);
+                // Update marker popup with sensor details if available
+                try {
+                    let popup = `<div style="font-size:13px">${lat.toFixed(6)}, ${lon.toFixed(6)}<br/>`;
+                    if (sensorData && typeof sensorData === 'object') {
+                        if (typeof sensorData.temp !== 'undefined') popup += `Temp: ${parseFloat(sensorData.temp).toFixed(1)} ${sensorData.unit || '°C'}<br/>`;
+                        if (typeof sensorData.humidity !== 'undefined') popup += `Humidity: ${parseFloat(sensorData.humidity).toFixed(0)} %<br/>`;
+                        if (typeof sensorData.pressure !== 'undefined') popup += `Pressure: ${parseFloat(sensorData.pressure).toFixed(0)} hPa<br/>`;
+                        if (sensorData.source) popup += `Source: ${sensorData.source}<br/>`;
+                    }
+                    // Optionally include a Google Static Maps image if API key is set
+                    try {
+                        const staticUrl = buildGoogleStaticMapUrl(lat, lon, { zoom: 15, width: 300, height: 100, maptype: 'satellite' });
+                        if (staticUrl) popup += `<div style="margin-top:6px"><img src="${staticUrl}" alt="map" style="width:100%;height:auto;border-radius:6px;display:block"/></div>`;
+                    } catch (e) { /* ignore image build */ }
+                    popup += `</div>`;
+                    if (_leafletMarker) _leafletMarker.bindPopup(popup);
+                } catch (e) { /* ignore popup failures */ }
+                drawLocationHistory();
+
+                // Update the full-panel live image preview (if present)
+                try { updateLiveMapImage(lat, lon); } catch (e) { /* ignore */ }
+
+                // Only recenter the map if follow is enabled
+                if (followEnabled) {
+                    map.setView([lat, lon], 13, { animate: true });
+                }
+            } catch (e) {
+                console.warn('updateMapMarker error', e);
+            }
+        };
+
+        const loadLocationHistory = () => {
+            try {
+                const raw = localStorage.getItem(LOCATION_HISTORY_KEY);
+                const arr = raw ? JSON.parse(raw) : [];
+                if (Array.isArray(arr)) locationHistory = arr;
+            } catch (e) { locationHistory = []; }
+            // Render persisted history into the traceability timeline
+            try { renderLocationHistoryTimeline(); } catch (e) { /* ignore */ }
+            // If we have any persisted point, update the live image preview to the latest
+            try {
+                if (locationHistory && locationHistory.length) {
+                    const last = locationHistory[locationHistory.length - 1];
+                    if (last && typeof last.lat !== 'undefined' && typeof last.lon !== 'undefined') updateLiveMapImage(last.lat, last.lon);
+                }
+            } catch (e) { /* ignore */ }
+        };
+
+        const saveLocationHistory = () => {
+            try { localStorage.setItem(LOCATION_HISTORY_KEY, JSON.stringify(locationHistory)); } catch (e) { console.warn('saveLocationHistory failed', e); }
+        };
+
+        const addToLocationHistory = (lat, lon, sensorData = null) => {
+            const entry = {
+                lat: parseFloat(lat),
+                lon: parseFloat(lon),
+                ts: new Date().toISOString()
+            };
+            // Merge sensor data if provided (temp, humidity, pressure, source, report)
+            if (sensorData && typeof sensorData === 'object') {
+                if (typeof sensorData.temp !== 'undefined') entry.temp = parseFloat(sensorData.temp);
+                if (typeof sensorData.humidity !== 'undefined') entry.humidity = parseFloat(sensorData.humidity);
+                if (typeof sensorData.pressure !== 'undefined') entry.pressure = parseFloat(sensorData.pressure);
+                if (sensorData.unit) entry.unit = sensorData.unit;
+                if (sensorData.source) entry.source = sensorData.source;
+                if (sensorData.report) entry.report = sensorData.report;
+            }
+            locationHistory.push(entry);
+            // keep a reasonable limit
+            if (locationHistory.length > 500) locationHistory.shift();
+            saveLocationHistory();
+        };
+
+        const drawLocationHistory = () => {
+            try {
+                const map = initLeafletMap('live-loc-mapview');
+                if (!map) return;
+                // Remove existing polyline
+                if (_leafletPolyline) {
+                    map.removeLayer(_leafletPolyline);
+                    _leafletPolyline = null;
+                }
+                if (locationHistory.length < 2) return;
+                const latlngs = locationHistory.map(p => [p.lat, p.lon]);
+                _leafletPolyline = L.polyline(latlngs, { color: '#3b82f6', weight: 4, opacity: 0.9 }).addTo(map);
+            } catch (e) { console.warn('drawLocationHistory failed', e); }
+        };
+
+        const renderLocationHistoryTimeline = () => {
+            const timeline = $('#traceability-timeline');
+            if (!timeline) return;
+            // Remove previous history entries (but keep any other non-history items)
+            $$('#traceability-timeline li.history-location-entry').forEach(el => el.remove());
+            // Render all persisted entries (limit to last 200 for safety)
+            const items = locationHistory.slice(-200);
+            items.forEach(item => {
+                const el = document.createElement('li');
+                el.className = 'mb-10 ml-6 history-location-entry';
+                const lat = typeof item.lat !== 'undefined' ? item.lat : '';
+                const lon = typeof item.lon !== 'undefined' ? item.lon : '';
+                const ts = item.ts || new Date().toISOString();
+                let coordsLine = lat !== '' && lon !== '' ? `Coordinates: ${lat}, ${lon} — <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lon}" target="_blank" class="text-indigo-300 underline">Open map</a>` : '';
+                let sensorHtml = '';
+                if (typeof item.temp !== 'undefined') sensorHtml += `<div>Temp: ${parseFloat(item.temp).toFixed(1)} ${item.unit || '°C'}</div>`;
+                if (typeof item.humidity !== 'undefined') sensorHtml += `<div>Humidity: ${parseFloat(item.humidity).toFixed(0)} %</div>`;
+                if (typeof item.pressure !== 'undefined') sensorHtml += `<div>Pressure: ${parseFloat(item.pressure).toFixed(0)} hPa</div>`;
+                if (item.source) sensorHtml += `<div>Source: ${item.source}</div>`;
+                if (item.report) sensorHtml += `<div>Report: ${item.report}</div>`;
+                // Google static preview image if API key present
+                let imgHtml = '';
+                try {
+                    const staticUrl = (typeof buildGoogleStaticMapUrl === 'function') ? buildGoogleStaticMapUrl(lat, lon, { zoom: 14, width: 420, height: 140, maptype: 'satellite' }) : null;
+                    if (staticUrl) imgHtml = `<div class="mt-2"><img src="${staticUrl}" alt="map" style="width:100%;height:auto;border-radius:8px;display:block"/></div>`;
+                } catch (e) { imgHtml = ''; }
+                el.innerHTML = `
+                    <span class="absolute flex items-center justify-center w-6 h-6 bg-cyan-500 rounded-full -left-3 ring-8 dark:ring-gray-900 light:ring-gray-200 neon-glow-border">
+                        <i data-lucide="map-pin" class="w-3 h-3 text-white"></i>
+                    </span>
+                    <h3 class="mb-1 text-lg font-semibold dark:text-white light:text-[--text-color-dark]">Recorded Location</h3>
+                    <time class="block mb-2 text-sm font-normal leading-none text-gray-400">${new Date(ts).toLocaleString()}</time>
+                    <p class="text-base font-normal dark:text-gray-300 light:text-gray-700">${coordsLine}</p>
+                    <div class="mt-2 text-sm text-gray-400">${sensorHtml}</div>
+                `;
+                // Append older entries at the top or bottom? We'll append in chronological order
+                timeline.appendChild(el);
+            });
+        };
+
+        const clearLocationHistory = () => {
+            locationHistory = [];
+            saveLocationHistory();
+            try {
+                if (_leafletPolyline && _leafletMap) {
+                    _leafletMap.removeLayer(_leafletPolyline);
+                    _leafletPolyline = null;
+                }
+                if (_leafletMarker && _leafletMap) {
+                    _leafletMap.removeLayer(_leafletMarker);
+                    _leafletMarker = null;
+                }
+            } catch (e) { console.warn('clearLocationHistory map cleanup failed', e); }
+            // Remove live location timeline entries (those we add)
+            $$('#traceability-timeline li.live-location-entry').forEach(el => el.remove());
+            showToast('Location history cleared', 'info');
+        };
+
+        const getGeolocation = (options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }) => new Promise((resolve, reject) => {
+            if (!navigator.geolocation) return reject(new Error('Geolocation not supported'));
+            navigator.geolocation.getCurrentPosition((pos) => {
+                resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy });
+            }, (err) => {
+                reject(err);
+            }, options);
+        });
+
+        const fetchWeatherForCoords = async (lat, lon) => {
+            // Open-Meteo (no API key) request current weather + hourly humidity/pressure
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&current_weather=true&hourly=relativehumidity_2m,surface_pressure&timezone=auto`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Weather fetch failed');
+                const json = await res.json();
+                if (!json) return null;
+
+                const result = {};
+                if (json.current_weather && typeof json.current_weather.temperature === 'number') {
+                    result.temp = json.current_weather.temperature;
+                }
+
+                // Attempt to extract humidity and pressure from hourly arrays at the same timestamp
+                if (json.hourly && Array.isArray(json.hourly.time)) {
+                    const times = json.hourly.time;
+                    const target = json.current_weather ? json.current_weather.time : times[times.length - 1];
+                    let idx = times.indexOf(target);
+                    if (idx === -1) idx = times.length - 1;
+
+                    if (json.hourly.relativehumidity_2m && typeof json.hourly.relativehumidity_2m[idx] !== 'undefined') {
+                        result.humidity = json.hourly.relativehumidity_2m[idx];
+                    }
+                    if (json.hourly.surface_pressure && typeof json.hourly.surface_pressure[idx] !== 'undefined') {
+                        result.pressure = json.hourly.surface_pressure[idx];
+                    }
+                }
+
+                // Map Open-Meteo weathercode to human-friendly description (simple mapping)
+                const weatherCodeMap = {
+                    0: 'Clear sky',
+                    1: 'Mainly clear',
+                    2: 'Partly cloudy',
+                    3: 'Overcast',
+                    45: 'Fog', 48: 'Depositing rime fog',
+                    51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle',
+                    61: 'Light rain', 63: 'Moderate rain', 65: 'Heavy rain',
+                    71: 'Light snow', 73: 'Moderate snow', 75: 'Heavy snow',
+                    80: 'Rain showers', 81: 'Moderate rain showers', 82: 'Heavy rain showers',
+                    95: 'Thunderstorm'
+                };
+                if (json.current_weather && typeof json.current_weather.weathercode !== 'undefined') {
+                    const wc = json.current_weather.weathercode;
+                    result.report = weatherCodeMap[wc] || `Weather code ${wc}`;
+                }
+
+                if (Object.keys(result).length > 0) {
+                    result.unit = '°C';
+                    result.source = 'Open-Meteo (approx)';
+                    return result;
+                }
+            } catch (e) {
+                console.warn('Weather fetch error', e);
+            }
+            return null;
+        };
+
+        const tryAmbientTemperatureSensor = async () => {
+            // Progressive enhancement: try AmbientTemperatureSensor if available
+            try {
+                if ('AmbientTemperatureSensor' in window) {
+                    return await new Promise((resolve, reject) => {
+                        try {
+                            const sensor = new AmbientTemperatureSensor();
+                            sensor.addEventListener('reading', () => {
+                                resolve({ temp: sensor.temperature, unit: '°C', source: 'Ambient sensor' });
+                            });
+                            sensor.addEventListener('error', (e) => reject(e.error));
+                            sensor.start();
+                            // stop after 3s if no reading
+                            setTimeout(() => { try { sensor.stop(); } catch {} }, 3000);
+                        } catch (e) { reject(e); }
+                    });
+                }
+            } catch (e) { console.warn('Ambient sensor failed', e); }
+            return null;
+        };
+
+        const updateLiveIoTReadings = async (opts = { manualPrompt: false }) => {
+            const el = $('#live-room-temp');
+            const sourceEl = $('#live-temp-source');
+            const smallTemp = $('#live-temp-value');
+            const smallHum = $('#live-humidity-value');
+            const smallPres = $('#live-pressure-value');
+            if (opts.manualPrompt) {
+                const val = prompt('Enter current room temperature (°C):');
+                if (val !== null && !isNaN(parseFloat(val))) {
+                    const t = parseFloat(val).toFixed(1);
+                    el.textContent = t + ' °C';
+                    if (smallTemp) smallTemp.textContent = t + ' °C';
+                    if (sourceEl) sourceEl.textContent = 'Source: manual input';
+                    const updatedEl = $('#live-room-updated'); if (updatedEl) updatedEl.textContent = 'Last updated: ' + new Date().toLocaleString();
+                }
+                return;
+            }
+
+            // 1) Try ambient sensor
+            let reading = await tryAmbientTemperatureSensor().catch(() => null);
+            if (reading) {
+                const t = parseFloat(reading.temp).toFixed(1);
+                if (el) el.textContent = t + ' ' + reading.unit;
+                if (smallTemp) smallTemp.textContent = t + ' ' + reading.unit;
+                if (sourceEl) sourceEl.textContent = `Source: ${reading.source}`;
+                    // Update overview numeric display as well
+                    const overviewTempEl = $('#overview-live-temp');
+                    if (overviewTempEl) overviewTempEl.textContent = t + ' ' + reading.unit;
+                    const overviewHumEl = $('#overview-humidity');
+                    if (overviewHumEl && typeof reading.humidity !== 'undefined') overviewHumEl.textContent = parseFloat(reading.humidity).toFixed(0) + ' %';
+                    const overviewPresEl = $('#overview-pressure');
+                    if (overviewPresEl && typeof reading.pressure !== 'undefined') overviewPresEl.textContent = parseFloat(reading.pressure).toFixed(0) + ' hPa';
+                    const overviewSourceEl = $('#overview-source');
+                    if (overviewSourceEl) overviewSourceEl.textContent = `Source: ${reading.source}`;
+                    const overviewReportEl = $('#overview-report');
+                    if (overviewReportEl && reading.report) overviewReportEl.textContent = reading.report;
+                    const updatedEl = $('#live-room-updated'); if (updatedEl) updatedEl.textContent = 'Last updated: ' + new Date().toLocaleString();
+                    // update overview humidity donut if available
+                    try {
+                        if (charts.overviewHumidity && typeof reading.humidity !== 'undefined') {
+                            const val = Math.max(0, Math.min(100, Math.round(reading.humidity)));
+                            charts.overviewHumidity.data.datasets[0].data = [val, 100 - val];
+                            charts.overviewHumidity.update();
+                            const overviewHumLabel = $('#overview-humidity-label'); if (overviewHumLabel) overviewHumLabel.textContent = val + ' %';
+                        }
+                    } catch (e) { console.warn('update overview donut from reading failed', e); }
+                return;
+            }
+
+            // 2) Geolocation -> weather fallback
+            try {
+                const pos = await getGeolocation();
+                lastKnownLocation = { lat: pos.lat, lon: pos.lon, timestamp: new Date().toISOString() };
+                // Try to fetch weather/sensor info, then update traceability and map with sensor data when available
+                const weather = await fetchWeatherForCoords(pos.lat, pos.lon).catch(() => null);
+                // Update live location details in traceability (pass weather as sensorData when available)
+                updateLiveLocationUI(lastKnownLocation, weather);
+                if (weather) {
+                    if (typeof weather.temp !== 'undefined') {
+                        const t = parseFloat(weather.temp).toFixed(1);
+                        if (el) el.textContent = t + ' ' + (weather.unit || '°C');
+                        if (smallTemp) smallTemp.textContent = t + ' ' + (weather.unit || '°C');
+                            // Update overview numeric display as well
+                            const overviewTempEl = $('#overview-live-temp');
+                            if (overviewTempEl) overviewTempEl.textContent = t + ' ' + (weather.unit || '°C');
+                            const overviewHumEl = $('#overview-humidity');
+                            if (overviewHumEl && typeof weather.humidity !== 'undefined') overviewHumEl.textContent = parseFloat(weather.humidity).toFixed(0) + ' %';
+                            const overviewPresEl = $('#overview-pressure');
+                            if (overviewPresEl && typeof weather.pressure !== 'undefined') overviewPresEl.textContent = parseFloat(weather.pressure).toFixed(0) + ' hPa';
+                            const overviewSourceEl = $('#overview-source');
+                            if (overviewSourceEl) overviewSourceEl.textContent = `Source: ${weather.source}`;
+                            const overviewReportEl = $('#overview-report');
+                            if (overviewReportEl && weather.report) overviewReportEl.textContent = weather.report;
+                            const updatedEl = $('#live-room-updated'); if (updatedEl) updatedEl.textContent = 'Last updated: ' + new Date().toLocaleString();
+                            // update overview humidity donut if available
+                            try {
+                                if (charts.overviewHumidity && typeof weather.humidity !== 'undefined') {
+                                    const val = Math.max(0, Math.min(100, Math.round(weather.humidity)));
+                                    charts.overviewHumidity.data.datasets[0].data = [val, 100 - val];
+                                    charts.overviewHumidity.update();
+                                    const overviewHumLabel = $('#overview-humidity-label'); if (overviewHumLabel) overviewHumLabel.textContent = val + ' %';
+                                }
+                            } catch (e) { console.warn('update overview donut from weather failed', e); }
+                    }
+                    if (typeof weather.humidity !== 'undefined') {
+                        const h = parseFloat(weather.humidity).toFixed(0);
+                        if (smallHum) smallHum.textContent = h + ' %';
+                    }
+                    if (typeof weather.pressure !== 'undefined') {
+                        const p = parseFloat(weather.pressure).toFixed(0);
+                        if (smallPres) smallPres.textContent = p + ' hPa';
+                    }
+                    if (sourceEl) sourceEl.textContent = `Source: ${weather.source}`;
+                    return;
+                }
+            } catch (e) {
+                console.warn('Geolocation/weather fallback failed', e);
+            }
+
+            // 3) Fallback: manual prompt
+            if (el) el.textContent = '-- °C';
+            if (sourceEl) sourceEl.textContent = 'Source: unavailable — use Set to enter manually';
+        };
+
+        const updateLiveLocationUI = (loc, sensorData = null) => {
+            const locText = $('#live-loc-text');
+            const locTime = $('#live-loc-time');
+            const mapLink = $('#live-loc-map');
+            if (!loc) return;
+            const lat = loc.lat.toFixed(6);
+            const lon = loc.lon.toFixed(6);
+            if (locText) locText.textContent = `Location: ${lat}, ${lon} (accuracy: ${loc.accuracy || 'n/a'}m)`;
+            if (locTime) locTime.textContent = new Date().toLocaleString();
+            if (mapLink) {
+                mapLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+                mapLink.classList.remove('hidden');
+            }
+
+            // Add a timeline event for this location (include sensor data if available)
+            const entryForTimeline = {
+                lat: parseFloat(lat),
+                lon: parseFloat(lon),
+                ts: new Date().toISOString()
+            };
+            if (sensorData && typeof sensorData === 'object') {
+                if (typeof sensorData.temp !== 'undefined') entryForTimeline.temp = parseFloat(sensorData.temp);
+                if (typeof sensorData.humidity !== 'undefined') entryForTimeline.humidity = parseFloat(sensorData.humidity);
+                if (typeof sensorData.pressure !== 'undefined') entryForTimeline.pressure = parseFloat(sensorData.pressure);
+                if (sensorData.unit) entryForTimeline.unit = sensorData.unit;
+                if (sensorData.source) entryForTimeline.source = sensorData.source;
+                if (sensorData.report) entryForTimeline.report = sensorData.report;
+            }
+            addTraceabilityLocationEvent(entryForTimeline);
+
+            // Update map preview if available (pass sensor data to marker/history)
+            updateMapMarker(parseFloat(lat), parseFloat(lon), sensorData);
+            // Adjust visibility of location text/link depending on current view
+            updateLocationDisplayVisibility();
+        };
+
+        // Hide or show the small location text/link depending on which view is active.
+        // Requirement: in the full Live Map view we do NOT show the map address/text.
+        const updateLocationDisplayVisibility = () => {
+            const locText = $('#live-loc-text');
+            const mapLink = $('#live-loc-map');
+            if (currentView === 'live-map-panel') {
+                if (locText) locText.classList.add('hidden');
+                if (mapLink) mapLink.classList.add('hidden');
+            } else {
+                if (locText) locText.classList.remove('hidden');
+                // Only show the map link if we have a lastKnownLocation
+                if (mapLink) {
+                    if (lastKnownLocation) mapLink.classList.remove('hidden');
+                    else mapLink.classList.add('hidden');
+                }
+            }
+        };
+
+        const addTraceabilityLocationEvent = (entry) => {
+            // entry: { lat, lon, ts, temp?, humidity?, pressure?, unit?, source?, report? }
+            const timeline = $('#traceability-timeline');
+            if (!timeline || !entry) return;
+            const lat = typeof entry.lat !== 'undefined' ? entry.lat : null;
+            const lon = typeof entry.lon !== 'undefined' ? entry.lon : null;
+            const ts = entry.ts || new Date().toISOString();
+            const el = document.createElement('li');
+            el.classList.add('live-location-entry');
+            el.className = 'mb-10 ml-6';
+            let coordsLine = lat !== null && lon !== null ? `Coordinates: ${lat}, ${lon} — <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lon}" target="_blank" class="text-indigo-300 underline">Open map</a>` : '';
+            let sensorHtml = '';
+            if (typeof entry.temp !== 'undefined') sensorHtml += `<div>Temp: ${parseFloat(entry.temp).toFixed(1)} ${entry.unit || '°C'}</div>`;
+            if (typeof entry.humidity !== 'undefined') sensorHtml += `<div>Humidity: ${parseFloat(entry.humidity).toFixed(0)} %</div>`;
+            if (typeof entry.pressure !== 'undefined') sensorHtml += `<div>Pressure: ${parseFloat(entry.pressure).toFixed(0)} hPa</div>`;
+            if (entry.source) sensorHtml += `<div>Source: ${entry.source}</div>`;
+            if (entry.report) sensorHtml += `<div>Report: ${entry.report}</div>`;
+            // Optional Google Static Maps preview
+            let imgHtml = '';
+            try {
+                const staticUrl = (typeof buildGoogleStaticMapUrl === 'function') ? buildGoogleStaticMapUrl(lat, lon, { zoom: 15, width: 380, height: 120, maptype: 'satellite' }) : null;
+                if (staticUrl) imgHtml = `<div class="mt-2"><img src="${staticUrl}" alt="map" style="width:100%;height:auto;border-radius:6px;display:block"/></div>`;
+            } catch (e) { imgHtml = ''; }
+
+            el.innerHTML = `
+                <span class="absolute flex items-center justify-center w-6 h-6 bg-cyan-500 rounded-full -left-3 ring-8 dark:ring-gray-900 light:ring-gray-200 neon-glow-border">
+                    <i data-lucide="map-pin" class="w-3 h-3 text-white"></i>
+                </span>
+                <h3 class="mb-1 text-lg font-semibold dark:text-white light:text-[--text-color-dark]">Live Location Update</h3>
+                <time class="block mb-2 text-sm font-normal leading-none text-gray-400">${new Date(ts).toLocaleString()}</time>
+                <p class="text-base font-normal dark:text-gray-300 light:text-gray-700">${coordsLine}</p>
+                <div class="mt-2 text-sm text-gray-400">${sensorHtml}</div>
+                ${imgHtml}
+            `;
+            timeline.appendChild(el);
+        };
+
+        // --- Overview helpers: export, recent activity, batch management ---
+        const downloadJSON = (obj, filename = 'data.json') => {
+            const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+        };
+
+        const exportClimate = () => {
+            const payload = {
+                timestamp: new Date().toISOString(),
+                temp: $('#overview-live-temp') ? $('#overview-live-temp').textContent : null,
+                humidity: $('#overview-humidity') ? $('#overview-humidity').textContent : null,
+                pressure: $('#overview-pressure') ? $('#overview-pressure').textContent : null,
+                source: $('#overview-source') ? $('#overview-source').textContent : null,
+                report: $('#overview-report') ? $('#overview-report').textContent : null
+            };
+            downloadJSON(payload, `pharmachain_climate_${new Date().toISOString().replace(/[:.]/g,'-')}.json`);
+            showToast('Climate exported (JSON)', 'success');
+        };
+
+        const exportLocationHistory = () => {
+            downloadJSON(locationHistory, `pharmachain_location_history_${new Date().toISOString().replace(/[:.]/g,'-')}.json`);
+            showToast('Location history exported (JSON)', 'success');
+        };
+
+        const simulateNow = () => {
+            // Force an immediate IoT data tick and a live reading attempt
+            try { updateIotData(); updateLiveIoTReadings(); showToast('Simulated IoT tick triggered', 'info'); } catch (e) { console.warn(e); }
+        };
+
+        const updateRecentActivity = () => {
+            const el = $('#recent-activity-list');
+            if (!el) return;
+            el.innerHTML = '';
+
+            // 1) recent chain blocks (top 3)
+            const recentBlocks = chain.slice(0, 3);
+            recentBlocks.forEach(b => {
+                const item = document.createElement('div');
+                item.className = 'p-2 rounded-md bg-black/10';
+                item.innerHTML = `<div class="text-xs text-black-500 font-semibold">${b.data.type}</div><div class="text-[12px] font-mono text-gray+400">${b.hash.substring(0,12)} — ${b.timestamp}</div>`;
+                el.appendChild(item);
+            });
+
+            // 2) recent location events (last 3)
+            const locs = locationHistory.slice(-3).reverse();
+            locs.forEach(l => {
+                const item = document.createElement('div');
+                item.className = 'p-2 rounded-md bg-black/5';
+                let details = '';
+                if (typeof l.temp !== 'undefined') details += `<div class="text-[12px]">Temp: ${parseFloat(l.temp).toFixed(1)} ${l.unit || '°C'}</div>`;
+                if (typeof l.humidity !== 'undefined') details += `<div class="text-[12px]">Humidity: ${parseFloat(l.humidity).toFixed(0)} %</div>`;
+                if (typeof l.pressure !== 'undefined') details += `<div class="text-[12px]">Pressure: ${parseFloat(l.pressure).toFixed(0)} hPa</div>`;
+                details += `<div class="text-[12px] text-gray-400">${l.lat.toFixed(4)}, ${l.lon.toFixed(4)} — ${new Date(l.ts).toLocaleTimeString()}</div>`;
+                item.innerHTML = `<div class="text-xs text-gray-300">Location</div><div class="text-[12px] text-gray-400">${details}</div>`;
+                el.appendChild(item);
+            });
+
+            // 3) recent anomaly logs (first 3 lines)
+            const anom = $('#anomaly-log') ? $('#anomaly-log').textContent.trim().split('\n').slice(0,3) : [];
+            anom.forEach(line => {
+                if (!line) return;
+                const item = document.createElement('div');
+                item.className = 'p-2 rounded-md bg-black-900/10';
+                item.innerHTML = `<div class="text-xs text-black+500">Log</div><div class="text-[12px] text-white-300 font-mono">${line.substring(0,120)}</div>`;
+                el.appendChild(item);
+            });
+        };
+
+        const findBatchById = (id) => {
+            if (!id) return null;
+            return batches.find(b => b.id.toLowerCase() === id.toLowerCase());
+        };
+
+        const searchBatch = () => {
+            const q = ($('#batch-search-input') && $('#batch-search-input').value) || '';
+            if (!q) { showToast('Enter a batch ID to search', 'alert'); return; }
+            const found = findBatchById(q);
+            if (!found) { showToast(`Batch ${q} not found`, 'alert'); return; }
+            // Show small modal-like info via toast and highlight
+            showToast(`Found ${found.id}: ${found.product} (${found.status})`, 'success');
+            // Optionally scroll to traceability or highlight in UI
+        };
+
+        const toggleBatchCreateForm = () => {
+            const form = $('#batch-create-form');
+            if (!form) return;
+            form.classList.toggle('hidden');
+        };
+
+        const createBatch = () => {
+            const id = ($('#batch-create-id') && $('#batch-create-id').value) || '';
+            const product = ($('#batch-create-product') && $('#batch-create-product').value) || 'Unknown';
+            const manufacturer = ($('#batch-create-manufacturer') && $('#batch-create-manufacturer').value) || 'Unknown';
+            if (!id) { showToast('Batch ID required', 'alert'); return; }
+            if (findBatchById(id)) { showToast('Batch already exists', 'alert'); return; }
+            const batch = { id, product, manufacturer, status: 'Registered' };
+            batches.push(batch);
+            updateKpis();
+            showToast(`Batch ${id} created`, 'success');
+            // Clear form
+            $('#batch-create-id').value = '';
+            $('#batch-create-product').value = '';
+            $('#batch-create-manufacturer').value = '';
+            toggleBatchCreateForm();
+        };
+
+
+        const init = () => {
+            // 1. Initial UI Setup
+            updateRole($('#role-selector').value);
+            // Must call switchView AFTER the chart init, as it depends on active state
+            
+            updateKpis();
+            updateBlockchainVisualization();
+            
+            // 2. Event Listeners
+            $('#role-selector').addEventListener('change', (e) => updateRole(e.target.value));
+            $('#theme-toggle').addEventListener('click', toggleTheme);
+            $$('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    switchView(link.getAttribute('data-view'));
+                });
+            });
+            $('#open-sidebar-btn').addEventListener('click', () => $('#sidebar').classList.remove('-translate-x-full'));
+            $('#close-sidebar-btn').addEventListener('click', () => $('#sidebar').classList.add('-translate-x-full'));
+
+            // Auth UI bindings
+            const loginBtn = $('#login-btn');
+            const signupBtn = $('#signup-btn');
+            const logoutBtn = $('#logout-btn');
+            if (loginBtn) loginBtn.addEventListener('click', () => switchView('login'));
+            if (signupBtn) signupBtn.addEventListener('click', () => switchView('signup'));
+            if (logoutBtn) logoutBtn.addEventListener('click', () => { clearSession(); updateAuthUI(); showToast('Logged out', 'info'); });
+
+            const loginForm = $('#login-form');
+            if (loginForm) loginForm.addEventListener('submit', handleLoginSubmit);
+            const signupForm = $('#signup-form');
+            if (signupForm) signupForm.addEventListener('submit', handleSignupSubmit);
+
+            const toSignup = $('#to-signup');
+            if (toSignup) toSignup.addEventListener('click', (e) => { e.preventDefault(); switchView('signup'); });
+            const toLogin = $('#to-login');
+            if (toLogin) toLogin.addEventListener('click', (e) => { e.preventDefault(); switchView('login'); });
+
+            // Load persisted users & session and update UI
+            try { loadUsers(); } catch (e) { /* ignore */ }
+            updateAuthUI();
+
+            // 3. Chart Setup
+            initializeCharts();
+            
+            // Small UI animations: add subtle pulse to KPI cards
+            $$('.kpi-card').forEach(k => k.classList.add('pulse'));
+
+            // Live temp/location: wire up controls
+            const refreshTempBtn = $('#refresh-temp-btn');
+            const manualTempBtn = $('#manual-temp-btn');
+            if (refreshTempBtn) refreshTempBtn.addEventListener('click', () => updateLiveIoTReadings());
+            if (manualTempBtn) manualTempBtn.addEventListener('click', () => updateLiveIoTReadings({ manualPrompt: true }));
+            // Kick off an initial attempt to read live temp/location and related readings
+            updateLiveIoTReadings();
+            // Map follow toggle and clear history
+            const followToggle = $('#follow-toggle');
+            const clearHistoryBtn = $('#clear-history');
+            if (followToggle) {
+                followToggle.addEventListener('click', () => {
+                    followEnabled = !followEnabled;
+                    $('#follow-state').textContent = followEnabled ? 'On' : 'Off';
+                    showToast(`Map follow ${followEnabled ? 'enabled' : 'disabled'}`, 'info');
+                });
+            }
+            if (clearHistoryBtn) {
+                clearHistoryBtn.addEventListener('click', () => clearLocationHistory());
+            }
+
+            // Load any persisted location history and draw it
+            loadLocationHistory();
+            setTimeout(() => drawLocationHistory(), 800);
+
+            // Overview Quick Actions wiring
+            const exportClimateBtn = $('#export-climate-btn');
+            const exportLocBtn = $('#export-loc-btn');
+            const openLiveMapBtn = $('#open-live-map-btn');
+            const simulateNowBtn = $('#simulate-now-btn');
+            if (exportClimateBtn) exportClimateBtn.addEventListener('click', exportClimate);
+            if (exportLocBtn) exportLocBtn.addEventListener('click', exportLocationHistory);
+            if (openLiveMapBtn) openLiveMapBtn.addEventListener('click', () => switchView('live-map-panel'));
+            if (simulateNowBtn) simulateNowBtn.addEventListener('click', simulateNow);
+
+            // Batch search/create wiring
+            const batchSearchBtn = $('#batch-search-btn');
+            const batchSearchInput = $('#batch-search-input');
+            const batchCreateToggle = $('#batch-create-toggle');
+            const batchCreateBtn = $('#batch-create-btn');
+            if (batchSearchBtn) batchSearchBtn.addEventListener('click', searchBatch);
+            if (batchSearchInput) batchSearchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') searchBatch(); });
+            if (batchCreateToggle) batchCreateToggle.addEventListener('click', toggleBatchCreateForm);
+            if (batchCreateBtn) batchCreateBtn.addEventListener('click', createBatch);
+
+            // Recent activity refresh interval
+            updateRecentActivity();
+            setInterval(updateRecentActivity, 5000);
+            // Periodically refresh every 60s
+            setInterval(() => updateLiveIoTReadings(), 60000);
+            // Initialize Leaflet map container (will remain hidden until a location is available)
+            setTimeout(() => { initLeafletMap(); }, 1000);
+
+            // 4. Start Simulators
+            setInterval(updateIotData, 5000); // Update IoT data every 5s
+            setInterval(() => { $('#current-time').textContent = new Date().toLocaleTimeString(); }, 1000);
+            
+            // 5. Initial Theme and View Load
+            const isDarkPreferred = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (isDarkPreferred) {
+                $('html').classList.add('dark');
+            } else {
+                 // Initialize in Light Mode if preferred, or if theme toggle was previously used
+                 $('html').classList.remove('dark');
+                 $('html').classList.add('light');
+                 $('#theme-toggle').innerHTML = `<i data-lucide="moon" class="w-6 h-6"></i>`; // Change icon for light mode start
+                 updateChartColors(false); // Update charts for light mode
+            }
+             switchView('overview');
+             
+             // Ensure correct initial theme icon is displayed if dark is the default
+             if ($('html').classList.contains('dark')) {
+                $('#theme-toggle').innerHTML = `<i data-lucide="sun" class="w-6 h-6"></i>`;
+                updateChartColors(true);
+             }
+        };
+
+        window.onload = init;
+    </script>
+</body>
+</html>

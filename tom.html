@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaChain Dashboard</title>
+    <!-- Load Tailwind CSS (For utility classes not fully covered by Bootstrap, although Bootstrap is primary) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'pc-primary': '#0d6efd',
+                        'pc-secondary': '#6c757d',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Bootstrap CSS (5.3) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <style>
+        body { font-family: "Inter", sans-serif; background-color: #f8f9fa; }
+        #sidebar {
+            width: 250px;
+            min-height: 100vh;
+            background: #212529;
+            transition: transform 0.3s ease;
+        }
+        #sidebar a { color: #adb5bd; }
+        #sidebar a:hover { color: #ffffff; background: #343a40; }
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .text-xxs { font-size: 0.7rem; }
+        #logViewer {
+            max-height: 200px;
+            overflow-y: scroll;
+            font-size: 0.8rem;
+            background-color: #343a40;
+            color: #ccc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        #logViewer .warn { color: #ffc107; font-weight: bold; }
+        #logViewer .info { color: #adb5bd; }
+
+        /* Timeline styling for Batch Modal */
+        #modalTimeline {
+            list-style: none;
+            padding-left: 0;
+            border-left: 2px solid #e9ecef;
+        }
+        #modalTimeline li {
+            position: relative;
+            padding: 0 0 20px 20px;
+            margin-left: 5px;
+        }
+        #modalTimeline li::before {
+            content: '';
+            position: absolute;
+            left: -11px;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            background-color: #f8f9fa;
+            border: 3px solid #0d6efd;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        #modalTimeline li:last-child { padding-bottom: 0; }
+        #modalTimeline li:last-child::before { border-color: #6c757d; }
+        .list-group-item { background-color: transparent; border: none; }
+        .list-group-item > div { display: flex; flex-direction: column; }
+
+
+        /* Mobile Responsiveness for Sidebar */
+        @media (max-width: 767px) {
+            #sidebar {
+                position: fixed;
+                z-index: 1050;
+                transform: translateX(-250px);
+            }
+            #sidebar.open {
+                transform: translateX(0);
+            }
+            #mainContent {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="d-flex flex-column" id="sidebar">
+            <div class="p-3 text-white fw-bold fs-5 border-bottom border-secondary">
+                <i class="bi bi-truck me-2"></i> PharmaChain
+            </div>
+            <div class="list-group list-group-flush flex-grow-1" id="navLinks">
+                <a href="#" class="list-group-item list-group-item-action py-3 px-4 active" data-section="overview">
+                    <i class="bi bi-speedometer2 me-2"></i> Overview
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-3 px-4" data-section="traceability">
+                    <i class="bi bi-box-seam me-2"></i> Traceability
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-3 px-4" data-section="approvals">
+                    <i class="bi bi-patch-check me-2"></i> Approvals
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-3 px-4 d-flex align-items-center" data-section="alerts">
+                    <i class="bi bi-bell me-2"></i> Alerts
+                    <span id="notifyCount" class="badge bg-danger ms-auto rounded-pill">0</span>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-3 px-4" data-section="reports">
+                    <i class="bi bi-file-earmark-bar-graph me-2"></i> Reports
+                </a>
+            </div>
+            <div class="p-3 border-top border-secondary text-white small">
+                Role: <span id="roleTop">FDA</span>
+                <select id="roleSwitcher" class="form-select form-select-sm mt-2 bg-dark text-white border-secondary">
+                    <option value="FDA">FDA (Regulator)</option>
+                    <option value="Manufacturer">Manufacturer</option>
+                    <option value="Distributor">Distributor</option>
+                    <option value="Pharmacy">Pharmacy</option>
+                </select>
+            </div>
+        </div>
+        <!-- /Sidebar -->
+
+        <!-- Page Content -->
+        <div id="mainContent" class="flex-grow-1 p-0">
+            <!-- Navbar Header -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sticky-top">
+                <div class="container-fluid">
+                    <button class="btn btn-primary d-md-none" id="toggleSidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h1 class="navbar-brand mb-0 h4">Dashboard</h1>
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-circle fs-5 me-2 text-pc-secondary"></i>
+                        <span class="d-none d-md-block">Welcome, User!</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="p-3 p-md-5">
+                <!-- Overview Section -->
+                <section id="section-overview" class="section">
+                    <h2 class="h3 mb-4 fw-light text-pc-primary">Key Metrics & IoT Health</h2>
+
+                    <!-- KPIs -->
+                    <div class="row g-4 mb-5">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card shadow-sm border-start border-5 border-primary h-full">
+                                <div class="card-body">
+                                    <div class="h5 mb-2 text-pc-primary">Total Batches</div>
+                                    <div class="display-6 fw-bold" id="kpiBatches">12</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card shadow-sm border-start border-5 border-warning h-full">
+                                <div class="card-body">
+                                    <div class="h5 mb-2 text-warning-emphasis" id="kpiLabelApprovals">FDA Approvals Pending</div>
+                                    <div class="display-6 fw-bold" id="kpiApprovals">4</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card shadow-sm border-start border-5 border-danger h-full">
+                                <div class="card-body">
+                                    <div class="h5 mb-2 text-danger">Active Alerts</div>
+                                    <div class="display-6 fw-bold" id="kpiAlerts">2</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card shadow-sm border-start border-5 border-info h-full">
+                                <div class="card-body">
+                                    <div class="h5 mb-2 text-info-emphasis" id="kpiLabelTransit">Drugs in Transit</div>
+                                    <div class="display-6 fw-bold" id="kpiTransit">4</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- IoT Charts -->
+                    <h3 class="h4 mb-4 fw-light text-pc-primary">Real-Time Cold Chain Monitoring</h3>
+                    <div class="row g-4 mb-5">
+                        <div class="col-lg-4">
+                            <div class="card shadow-sm h-full">
+                                <div class="card-header bg-white fw-bold"><i class="bi bi-thermometer-half"></i> Temperature (°C)</div>
+                                <div class="card-body"><canvas id="tempChart"></canvas></div>
+                                <div class="card-footer text-muted text-xxs bg-white">Safe Range: 2°C - 8°C</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card shadow-sm h-full">
+                                <div class="card-header bg-white fw-bold"><i class="bi bi-droplet-half"></i> Humidity (%)</div>
+                                <div class="card-body"><canvas id="humidChart"></canvas></div>
+                                <div class="card-footer text-muted text-xxs bg-white">Typical: 40% - 60%</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card shadow-sm h-full">
+                                <div class="card-header bg-white fw-bold"><i class="bi bi-wind"></i> Pressure (hPa)</div>
+                                <div class="card-body"><canvas id="pressChart"></canvas></div>
+                                <div class="card-footer text-muted text-xxs bg-white">Typical: ~1013 hPa</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Log -->
+                    <h3 class="h4 mb-3 fw-light text-pc-primary">System Activity Log</h3>
+                    <div id="logViewer"></div>
+                </section>
+
+                <!-- Traceability Section -->
+                <section id="section-traceability" class="section d-none">
+                    <h2 class="h3 mb-4 fw-light text-pc-primary">Batch Traceability & Shipment Ledger</h2>
+
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                            <div class="mb-2 mb-md-0">
+                                <input type="search" id="traceSearch" class="form-control" placeholder="Search Batch ID, Manufacturer, Status, or Location..." style="max-width: 350px;">
+                            </div>
+                            <div class="small text-muted" id="tracePagerInfo"></div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped mb-0" id="traceTable">
+                                    <thead>
+                                        <tr>
+                                            <th class="sortable" data-key="batchId">Batch ID <i class="bi bi-sort-up"></i></th>
+                                            <th class="sortable" data-key="manufacturer">Manufacturer</th>
+                                            <th class="sortable" data-key="status">Status</th>
+                                            <th class="sortable" data-key="location">Location</th>
+                                            <th class="sortable" data-key="timestamp">Last Update</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="traceTableBody">
+                                        <!-- Table rows rendered by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                            <div class="small">
+                                Rows per page:
+                                <select id="tracePageSize" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                </select>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="tracePrev"><i class="bi bi-caret-left-fill"></i> Previous</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="traceNext">Next <i class="bi bi-caret-right-fill"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Approvals Section -->
+                <section id="section-approvals" class="section d-none">
+                    <h2 class="h3 mb-4 fw-light text-pc-primary">Regulatory & QA Approvals</h2>
+
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white fw-bold">Recent Approval History</div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Batch ID</th>
+                                            <th>Requester</th>
+                                            <th>Status</th>
+                                            <th>Timestamp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="approvalHistory">
+                                        <!-- Rows rendered by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Alerts Section -->
+                <section id="section-alerts" class="section d-none">
+                    <h2 class="h3 mb-4 fw-light text-pc-primary">Active & Resolved System Alerts</h2>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="h6 mb-0 text-muted">Alerts List</h4>
+                        <select id="alertsFilter" class="form-select form-select-sm" style="width: auto;">
+                            <option value="Pending">Pending</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="All" selected>All</option>
+                        </select>
+                    </div>
+
+                    <ul class="list-group list-group-flush border shadow-sm rounded-lg" id="alertsList">
+                        <!-- Alert items rendered by JS -->
+                    </ul>
+                </section>
+
+                <!-- Reports Section -->
+                <section id="section-reports" class="section d-none">
+                    <h2 class="h3 mb-4 fw-light text-pc-primary">Data Export & Compliance Reports</h2>
+
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="card shadow-sm h-full">
+                                <div class="card-body">
+                                    <h5 class="card-title fw-semibold">Shipment Summary (CSV)</h5>
+                                    <p class="card-text text-secondary">Export the complete batch traceability ledger data into a standard spreadsheet format.</p>
+                                    <button class="btn btn-outline-primary w-full" id="btnDownloadShipments"><i class="bi bi-download me-2"></i> Download CSV</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card shadow-sm h-full">
+                                <div class="card-body">
+                                    <h5 class="card-title fw-semibold">IoT Sensor Metrics (JSON)</h5>
+                                    <p class="card-text text-secondary">Download the historical data points from the cold chain sensor simulation.</p>
+                                    <button class="btn btn-outline-primary w-full" id="btnDownloadIot"><i class="bi bi-download me-2"></i> Download JSON</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card shadow-sm h-full">
+                                <div class="card-body">
+                                    <h5 class="card-title fw-semibold">Compliance Report (TXT)</h5>
+                                    <p class="card-text text-secondary">Generate a quick summary report on current approval and alert status.</p>
+                                    <button class="btn btn-outline-primary w-full" id="btnDownloadCompliance"><i class="bi bi-file-earmark-text me-2"></i> Generate Report</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+        <!-- /Page Content -->
+    </div>
+
+    <!-- Batch Detail Modal -->
+    <div class="modal fade" id="batchModal" tabindex="-1" aria-labelledby="batchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="batchModalLabel">Batch Details: <span id="modalBatchId" class="text-pc-primary"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="text-muted small">Manufacturer</div>
+                            <div class="fw-bold" id="modalManufacturer"></div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">Current Status</div>
+                            <div class="fw-bold text-success" id="modalStatus"></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="fw-semibold mb-3">Blockchain Journey Timeline</h6>
+                    <ul id="modalTimeline" class="p-0">
+                        <!-- Timeline steps generated by JS -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Interactive Demo Logic (from user input) -->
+    <script>
+/* PharmaChain Dashboard – Interactive Demo Logic (no backend required) */
+/* Uses Bootstrap + Chart.js already loaded in index.html */
+
+(function(){
+  // ---------- Helpers ----------
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const fmtTime = (d=new Date()) =>
+    d.toISOString().replace('T',' ').substring(0,19);
+
+  const log = (msg, level='info') => {
+    const el = $('#logViewer');
+    const line = document.createElement('div');
+    line.className = level;
+    line.textContent = [${fmtTime()}] ${msg};
+    el.prepend(line);
+  };
+
+  const toast = (msg, variant='primary') => {
+    // Lightweight toast via Bootstrap Alerts inserted temporarily
+    const wrap = document.createElement('div');
+    wrap.className = alert alert-${variant} shadow-sm border py-2 px-3 position-fixed top-0 end-0 m-3;
+    wrap.style.zIndex = 1080;
+    wrap.textContent = msg;
+    document.body.appendChild(wrap);
+    setTimeout(()=>wrap.classList.add('show'), 10);
+    setTimeout(()=>{ wrap.remove(); }, 2800);
+  };
+
+  // ---------- Demo Data ----------
+  const batches = [
+    { batchId:'BAT-001', manufacturer:'Global Meds', status:'In Transit', location:'Los Angeles, US',  timestamp:'2025-11-04 18:12:20' },
+    { batchId:'BAT-002', manufacturer:'Zenith Labs', status:'FDA Approved', location:'Newark, US',    timestamp:'2025-11-05 09:22:41' },
+    { batchId:'BAT-003', manufacturer:'Acme Pharma', status:'Awaiting Approval', location:'Austin, US', timestamp:'2025-11-03 11:08:10' },
+    { batchId:'BAT-004', manufacturer:'Medikon',     status:'At Pharmacy', location:'Phoenix, US',     timestamp:'2025-11-05 12:33:01' },
+    { batchId:'BAT-005', manufacturer:'Acme Pharma', status:'In Transit',  location:'San Jose, US',    timestamp:'2025-11-05 16:50:55' },
+    { batchId:'BAT-006', manufacturer:'Global Meds', status:'Registered',  location:'Dallas, US',      timestamp:'2025-11-02 10:19:47' },
+    { batchId:'BAT-007', manufacturer:'Biotex',      status:'In Transit',  location:'Denver, US',      timestamp:'2025-11-05 19:02:14' },
+    { batchId:'BAT-008', manufacturer:'Zenith Labs', status:'Awaiting Approval', location:'Miami, US', timestamp:'2025-11-01 08:44:30' },
+    { batchId:'BAT-009', manufacturer:'Medikon',     status:'FDA Approved', location:'Chicago, US',    timestamp:'2025-11-05 07:17:22' },
+    { batchId:'BAT-010', manufacturer:'Biotex',      status:'Registered', location:'Raleigh, US',      timestamp:'2025-11-03 13:06:59' },
+    { batchId:'BAT-011', manufacturer:'Acme Pharma', status:'In Transit', location:'Sacramento, US',   timestamp:'2025-11-05 21:14:03' },
+    { batchId:'BAT-012', manufacturer:'Global Meds', status:'At Pharmacy', location:'Seattle, US',     timestamp:'2025-11-04 14:31:18' },
+  ];
+
+  const approvalHistory = [
+    { batchId:'BAT-002', requester:'Zenith Labs', status:'Approved', timestamp:'2025-11-05 09:22:41' },
+    { batchId:'BAT-009', requester:'Medikon',     status:'Approved', timestamp:'2025-11-05 07:17:22' },
+    { batchId:'BAT-003', requester:'Acme Pharma', status:'Pending',  timestamp:'2025-11-03 11:08:10' },
+    { batchId:'BAT-008', requester:'Zenith Labs', status:'Pending',  timestamp:'2025-11-01 08:44:30' },
+  ];
+
+  let alerts = [
+    { id:1, severity:'Critical', status:'Pending', title:'Temperature Breach', detail:'BAT-001 at 11.2°C (>8°C).', when:'2025-11-05 11:25:30' },
+    { id:2, severity:'High',    status:'Pending', title:'Unauthorized Location', detail:'BAT-005 left geo-fence corridor.', when:'2025-11-04 18:01:12' },
+    { id:3, severity:'Medium',    status:'Resolved', title:'Intermittent Sensor', detail:'BAT-007 humidity sensor reconnect.', when:'2025-11-03 13:10:03' },
+  ];
+
+  // ---------- KPI Rendering ----------
+  function renderKpis(){
+    $('#kpiBatches').textContent = batches.length.toString();
+    const pendingApprovals = approvalHistory.filter(a=>a.status==='Pending').length
+      + batches.filter(b=>b.status==='Awaiting Approval').length;
+    $('#kpiApprovals').textContent = pendingApprovals.toString();
+    $('#kpiAlerts').textContent = alerts.filter(a=>a.status==='Pending').length.toString();
+    $('#kpiTransit').textContent = batches.filter(b=>b.status==='In Transit').length.toString();
+    $('#notifyCount').textContent = $('#kpiAlerts').textContent;
+  }
+
+  // ---------- Navigation ----------
+  function setActiveSection(id){
+    $$('.section').forEach(s => s.classList.add('d-none'));
+    $(#section-${id}).classList.remove('d-none');
+    $$('#navLinks a').forEach(a=>{
+      a.classList.toggle('active', a.dataset.section===id);
+    });
+  }
+
+  // Sidebar toggle (mobile)
+  $('#toggleSidebar')?.addEventListener('click', ()=> $('#sidebar').classList.toggle('open'));
+  // Close sidebar on nav click (mobile)
+  $$('#navLinks a').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      e.preventDefault();
+      setActiveSection(a.dataset.section);
+      $('#sidebar').classList.remove('open');
+      log(Mapsd to ${a.textContent.trim()});
+    });
+  });
+
+  // ---------- Traceability Table (search/sort/paginate) ----------
+  let traceSortKey = 'timestamp';
+  let traceSortDir = 'desc';
+  let tracePage = 1;
+  let tracePageSize = parseInt($('#tracePageSize').value,10) || 10;
+  let traceQuery = '';
+
+  function getFilteredBatches(){
+    const q = traceQuery.toLowerCase().trim();
+    let rows = batches.filter(b=>{
+      if(!q) return true;
+      return [b.batchId,b.manufacturer,b.status,b.location].some(x=>x.toLowerCase().includes(q));
+    });
+
+    rows.sort((a,b)=>{
+      const dir = traceSortDir==='asc' ? 1 : -1;
+      let x=a[traceSortKey], y=b[traceSortKey];
+      if(traceSortKey==='timestamp'){ // compare as time
+        return (new Date(x)-new Date(y))*dir;
+      }
+      return (''+x).localeCompare((''+y))*dir;
+    });
+    // This second sort is needed because localeCompare is usually alphabetical asc.
+    // We reverse the array after sorting alphabetically (or numerically/chronologically) to get the final direction.
+    if(traceSortDir==='desc') rows.reverse();
+    return rows;
+  }
+
+  function renderTraceTable(){
+    const rows = getFilteredBatches();
+    const total = rows.length;
+    const totalPages = Math.max(1, Math.ceil(total/tracePageSize));
+    tracePage = Math.min(tracePage, totalPages);
+
+    const start = (tracePage-1)*tracePageSize;
+    const pageRows = rows.slice(start, start+tracePageSize);
+
+    const tbody = $('#traceTableBody');
+    tbody.innerHTML = '';
+    pageRows.forEach(row=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><a href="#" class="link-primary" data-batch="${row.batchId}">${row.batchId}</a></td>
+        <td>${row.manufacturer}</td>
+        <td><span class="badge ${badgeByStatus(row.status)}">${row.status}</span></td>
+        <td>${row.location}</td>
+        <td><span class="text-muted">${row.timestamp}</span></td>`;
+      tbody.appendChild(tr);
+    });
+
+    $('#tracePagerInfo').textContent = Showing ${start+1}-${Math.min(start+tracePageSize,total)} of ${total};
+    $('#tracePrev').disabled = tracePage<=1;
+    $('#traceNext').disabled = tracePage>=totalPages;
+
+    // Hook row links for modal
+    $$('#traceTableBody a[data-batch]').forEach(a=>{
+      a.addEventListener('click', (e)=>{
+        e.preventDefault();
+        openBatchModal(a.dataset.batch);
+      });
+    });
+
+    // Update sort icons in header
+    $$('#traceTable thead th.sortable').forEach(th => {
+        const key = th.dataset.key;
+        th.innerHTML = th.textContent.split('<')[0].trim() + ' '; // Reset icon
+        if (traceSortKey === key) {
+            const icon = traceSortDir === 'asc' ? '<i class="bi bi-sort-up"></i>' : '<i class="bi bi-sort-down"></i>';
+            th.innerHTML += icon;
+        } else {
+             th.innerHTML += '<i class="bi bi-filter-square text-muted opacity-50"></i>';
+        }
+    });
+  }
+
+  function badgeByStatus(status){
+    switch(status){
+      case 'FDA Approved': return 'bg-success-subtle text-success-emphasis badge';
+      case 'Awaiting Approval': return 'bg-warning-subtle text-warning-emphasis badge';
+      case 'In Transit': return 'bg-info-subtle text-info-emphasis badge';
+      case 'At Pharmacy': return 'bg-primary-subtle text-primary-emphasis badge';
+      case 'Registered': return 'bg-secondary-subtle text-secondary-emphasis badge';
+      default: return 'bg-light text-dark badge';
+    }
+  }
+
+  // Events
+  $('#traceSearch').addEventListener('input', (e)=>{ traceQuery=e.target.value; tracePage=1; renderTraceTable(); });
+  $('#tracePageSize').addEventListener('change', (e)=>{ tracePageSize=parseInt(e.target.value,10)||10; tracePage=1; renderTraceTable(); });
+  $('#tracePrev').addEventListener('click', ()=>{ tracePage=Math.max(1, tracePage-1); renderTraceTable(); });
+  $('#traceNext').addEventListener('click', ()=>{ tracePage=tracePage+1; renderTraceTable(); });
+  $$('#traceTable thead th.sortable').forEach(th=>{
+    th.style.cursor='pointer';
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.key;
+      if(traceSortKey===key){ traceSortDir = (traceSortDir==='asc'?'desc':'asc'); }
+      else { traceSortKey=key; traceSortDir='asc'; }
+      renderTraceTable();
+    });
+  });
+
+  // ---------- Batch Modal ----------
+  function openBatchModal(batchId){
+    const b = batches.find(x=>x.batchId===batchId);
+    if(!b){ toast('Batch not found','warning'); return; }
+    $('#modalBatchId').textContent = b.batchId;
+    $('#modalManufacturer').textContent = b.manufacturer;
+    $('#modalStatus').textContent = b.status;
+
+    const tl = $('#modalTimeline');
+    tl.innerHTML = '';
+    const steps = fakeJourneyFor(b);
+    steps.forEach(st=>{
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex align-items-start';
+      li.innerHTML = `
+        <span class="step-dot me-3" style="background:${st.color}; border: 3px solid ${st.color}"></span>
+        <div>
+          <div class="fw-semibold">${st.title}</div>
+          <div class="text-muted text-xxs">${st.when}</div>
+          <div class="text-secondary small">${st.note}</div>
+        </div>
+      `;
+      tl.appendChild(li);
+    });
+
+    const modal = new bootstrap.Modal($('#batchModal'));
+    modal.show();
+    log(Opened batch modal for ${batchId});
+  }
+
+  function fakeJourneyFor(b){
+    // Generate a short static-ish path for demo
+    const base = [
+      { title:'Registered on Ledger', note:Manufacturer: ${b.manufacturer}, color:'#0d6efd' },
+      { title:'FDA Review',           note:'Regulatory screening in progress', color:'#ffc107' },
+      { title:'Cold Chain Handover', note:'Handover to Distributor', color:'#17a2b8' },
+      { title:'Arrived at Pharmacy', note:'Ready for dispensing', color:'#28a745' },
+    ];
+    // Use the base timestamp to create slightly staggered fake timestamps
+    const baseDate = new Date(b.timestamp);
+    const timeFactor = 4 * 3600 * 1000; // 4 hours step
+    let steps = base.map((s,i)=>{
+        const stepDate = new Date(baseDate.getTime() - (base.length - 1 - i) * timeFactor);
+        return { ...s, when: fmtTime(stepDate) };
+    });
+
+    // Add current status as the final step if it's not the last one in the fake base
+    const currentStatusStep = steps.find(s => s.title.includes(b.status) || (b.status === 'FDA Approved' && s.title.includes('Review')) || (b.status === 'At Pharmacy' && s.title.includes('Pharmacy')));
+    if (!currentStatusStep) {
+        steps.push({
+            title: Current Status: ${b.status},
+            note: b.location,
+            color: '#6c757d',
+            when: b.timestamp
+        });
+        steps.sort((a, b) => new Date(a.when) - new Date(b.when));
+    }
+    return steps;
+  }
+
+  // ---------- IoT Charts (live simulation) ----------
+  const iot = {
+    labels: [],
+    temp: [],
+    humid: [],
+    press: [],
+    maxPoints: 40
+  };
+  let charts = { temp:null, humid:null, press:null };
+
+  function makeLineChart(ctx, label, color){
+    const datasets = [{
+        label,
+        data: iot[label.toLowerCase()],
+        fill: true,
+        backgroundColor: color.replace(')', ', 0.1)'), // Light background fill
+        borderColor: color,
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: .35
+    }];
+
+    // Add warning line for temperature
+    if (label === 'Temp') {
+        datasets.push({
+            label: 'Warning (8°C)',
+            data: new Array(iot.maxPoints).fill(8),
+            borderColor: 'rgba(255, 99, 132, 0.8)',
+            borderDash: [5, 5],
+            borderWidth: 1,
+            pointRadius: 0,
+            fill: false,
+            tension: 0
+        });
+    }
+
+    return new Chart(ctx, {
+      type:'line',
+      data:{
+        labels: iot.labels,
+        datasets
+      },
+      options:{
+        animation:false,
+        responsive:true,
+        maintainAspectRatio: false,
+        scales:{
+          x:{ display:false },
+          y:{ ticks:{ callback:v=>v } }
+        },
+        plugins:{ legend:{ display:false } }
+      }
+    });
+  }
+
+  function initCharts(){
+    // Ensure canvas elements have a height for Chart.js
+    $$('.card-body canvas').forEach(c => c.style.height = '150px');
+
+    charts.temp = makeLineChart($('#tempChart'), 'Temp', 'rgb(75, 192, 192)');
+    charts.humid = makeLineChart($('#humidChart'), 'Humid', 'rgb(54, 162, 235)');
+    charts.press = makeLineChart($('#pressChart'), 'Press', 'rgb(255, 159, 64)');
+    // Seed with a few points
+    for(let i=0;i<10;i++) pushIotPoint();
+    updateCharts();
+  }
+
+  function pushIotPoint(){
+    const tLast = iot.temp.at(-1) ?? 5.0;
+    // Simulate temp drift with occasional large jumps to trigger the alert
+    let nextT = tLast + (Math.random()-0.5)*0.7;
+    if (Math.random() < 0.05) { // 5% chance of a breach event
+        nextT += Math.random() > 0.5 ? 4 : -4; // sudden 4 degree spike/drop
+    }
+    nextT = Math.max(-5, Math.min(15, nextT)); // Clamp overall range
+
+    const nextH = 45 + (Math.random()*10-5);
+    const nextP = 1005 + (Math.random()*8-4);
+
+    iot.labels.push(new Date().toLocaleTimeString());
+    iot.temp.push(Number(nextT.toFixed(1)));
+    iot.humid.push(Number(nextH.toFixed(1)));
+    iot.press.push(Number(nextP.toFixed(1)));
+
+    // clamp size
+    ['labels','temp','humid','press'].forEach(k=>{
+      if(iot[k].length>iot.maxPoints) iot[k].shift();
+    });
+
+    // alert on temperature breach (outside 2-8 C)
+    if(nextT>8.5 || nextT<1.5){ // slightly wider buffer to prevent constant firing
+      const id = Math.max(0,...alerts.map(a=>a.id))+1;
+      const entry = { id, severity:'Critical', status:'Pending', title:'Temperature Breach',
+        detail:Auto-detected: ${nextT.toFixed(1)}°C (safe 2–8°C)., when: fmtTime() };
+      alerts.unshift(entry);
+      renderAlerts();
+      renderKpis();
+      toast(CRITICAL: ${entry.detail},'danger');
+      log(Temp anomaly detected: ${entry.detail}, 'warn');
+    }
+  }
+
+  function updateCharts(){
+    charts.temp.update();
+    charts.humid.update();
+    charts.press.update();
+  }
+
+  // Live loop
+  setInterval(()=>{ pushIotPoint(); updateCharts(); }, 4000);
+
+  // ---------- Alerts ----------
+  function renderAlerts(){
+    const filter = $('#alertsFilter').value;
+    const list = $('#alertsList');
+    list.innerHTML = '';
+
+    const rows = alerts.filter(a => filter==='All' ? true : a.status===filter);
+    if(rows.length===0){
+      list.innerHTML = <li class="list-group-item text-secondary py-3 text-center">No alerts match the current filter.</li>;
+      return;
+    }
+    rows.forEach(a=>{
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex align-items-center justify-content-between';
+      li.innerHTML = `
+        <div>
+          <div class="fw-semibold">
+            <span class="badge me-2 ${badgeFromSeverity(a.severity)}">${a.severity}</span>
+            ${a.title}
+          </div>
+          <div class="text-secondary small">${a.detail}</div>
+          <div class="text-muted text-xxs">${a.when} • Status: ${a.status}</div>
+        </div>
+        <div class="btn-group btn-group-sm flex-shrink-0 ms-2">
+          ${a.status==='Pending' ? <button class="btn btn-outline-success" data-act="resolve" data-id="${a.id}"><i class="bi bi-check2"></i> Resolve</button>:''}
+          <button class="btn btn-outline-danger" data-act="remove" data-id="${a.id}"><i class="bi bi-x"></i></button>
+        </div>`;
+      list.appendChild(li);
+    });
+
+    // Wire actions
+    $$('button[data-act="resolve"]', list).forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = Number(btn.dataset.id);
+        const item = alerts.find(a=>a.id===id);
+        if(item){ item.status='Resolved'; toast(Alert #${id} resolved,'success'); log(Alert ${id} marked resolved); renderAlerts(); renderKpis(); }
+      });
+    });
+    $$('button[data-act="remove"]', list).forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = Number(btn.dataset.id);
+        alerts = alerts.filter(a=>a.id!==id);
+        toast(Alert #${id} removed,'secondary');
+        log(Alert ${id} removed);
+        renderAlerts();
+        renderKpis();
+      });
+    });
+  }
+
+  function badgeFromSeverity(s){
+    switch(s){
+      case 'Critical': return 'bg-danger';
+      case 'High': return 'bg-warning text-dark';
+      case 'Medium': return 'bg-info text-dark';
+      default: return 'bg-secondary';
+    }
+  }
+
+  $('#alertsFilter').addEventListener('change', renderAlerts);
+
+  // ---------- FDA Approvals ----------
+  function renderApprovals(){
+    const tbody = $('#approvalHistory');
+    tbody.innerHTML = '';
+    approvalHistory.forEach(r=>{
+      const tr = document.createElement('tr');
+      const statusBadge = r.status==='Approved'
+        ? '<span class="badge bg-success">Approved</span>'
+        : '<span class="badge bg-warning text-dark">Pending</span>';
+      tr.innerHTML = `
+        <td>${r.batchId}</td>
+        <td>${r.requester}</td>
+        <td>${statusBadge}</td>
+        <td class="text-muted">${r.timestamp}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ---------- Reports ----------
+  function download(filename, content, mime='text/plain'){
+    const blob = new Blob([content], {type:mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setTimeout(()=> URL.revokeObjectURL(url), 1500);
+  }
+
+  $('#btnDownloadShipments').addEventListener('click', ()=>{
+    const header = ['Batch ID','Manufacturer','Status','Location','Timestamp'];
+    const rows = batches.map(b=>[b.batchId,b.manufacturer,b.status,b.location,b.timestamp]);
+    const csv = [header, ...rows].map(r=>r.map(x=>"${String(x).replace(/"/g,'""')}").join(',')).join('\n');
+    download('shipment_summary.csv', csv, 'text/csv');
+    toast('Shipment summary (CSV) downloaded','primary'); log('Downloaded shipment_summary.csv');
+  });
+
+  $('#btnDownloadIot').addEventListener('click', ()=>{
+    const payload = {
+      generatedAt: fmtTime(),
+      metrics: iot.labels.map((t,i)=>({ t, temp:iot.temp[i], humid:iot.humid[i], press:iot.press[i] }))
+    };
+    download('iot_metrics.json', JSON.stringify(payload,null,2), 'application/json');
+    toast('IoT metrics (JSON) downloaded','primary'); log('Downloaded iot_metrics.json');
+  });
+
+  $('#btnDownloadCompliance').addEventListener('click', ()=>{
+    // Simple text-based pseudo-PDF (let the OS open with default app). For real PDF use jsPDF.
+    const lines = [
+      'PharmaChain — Monthly Compliance Report',
+      Generated: ${fmtTime()},
+      '',
+      Total Batches: ${batches.length},
+      FDA Approved: ${batches.filter(b=>b.status==='FDA Approved').length},
+      Pending Approvals: ${approvalHistory.filter(a=>a.status==='Pending').length},
+      Active Alerts: ${alerts.filter(a=>a.status==='Pending').length},
+      '',
+      '— End of Report —'
+    ].join('\n');
+    download('compliance_report.txt', lines, 'text/plain');
+    toast('Compliance report generated','primary'); log('Downloaded compliance_report.txt');
+  });
+
+  // ---------- Role Switching ----------
+  const roleEffects = {
+    'FDA': { kpiLabelApprovals:'FDA Approvals Pending', kpiLabelTransit:'Drugs in Transit' },
+    'Manufacturer': { kpiLabelApprovals:'Batches Awaiting QA', kpiLabelTransit:'Shipments Dispatched' },
+    'Distributor': { kpiLabelApprovals:'Confirmations Pending', kpiLabelTransit:'Active Routes' },
+    'Pharmacy': { kpiLabelApprovals:'Incoming Deliveries', kpiLabelTransit:'En-route Packages' },
+  };
+
+  $('#roleSwitcher').addEventListener('change', (e)=>{
+    const role = e.target.value;
+    $('#roleTop').textContent = role;
+    const map = roleEffects[role] || roleEffects['FDA'];
+    $('#kpiLabelApprovals').textContent = map.kpiLabelApprovals;
+    $('#kpiLabelTransit').textContent = map.kpiLabelTransit;
+    toast(Switched role to ${role}, 'secondary');
+    log(Role changed to ${role});
+  });
+
+  // ---------- Initialization ----------
+  function init(){
+    setActiveSection('overview');
+    renderKpis();
+    renderTraceTable();
+    renderApprovals();
+    renderAlerts();
+    initCharts();
+
+    // Default log lines
+    log('Starting PharmaChain Kernel...');
+    log('Block validation service connected.');
+    log('IoT stream simulator running @4s cadence.');
+    log('Dashboard initialized. Ready.');
+  }
+
+  // Boot
+  document.addEventListener('DOMContentLoaded', init);
+})();
+    </script>
+</body>
+</html>
