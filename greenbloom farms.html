@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenBloom Farms - Connecting Growers & Buyers</title>
+    <!-- Load Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-green': '#2E8B57',
+                        'accent-pink': '#FF69B4',
+                        'text-dark': '#333333',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                }
+            }
+        };
+</script>
+    <!-- Load Poppins Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdL5vS/a6s/nQ+Kz9R9L9Xp2bB/P4e4s4q4+4H1qEw/4p6E4b/W+N9N9X9Y9E9Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #333333;
+            background-color: #FFFFFF;
+        }
+
+        /* Subtle floral pattern background */
+        .floral-bg {
+            background-image: radial-gradient(#f0f8ff 1px, transparent 1px), radial-gradient(#f0f8ff 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            background-color: #f7fdfb;
+        }
+
+        /* Custom transition classes for smooth animations */
+        .transition-all-smooth {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Button hover animation */
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(46, 139, 87, 0.4);
+        }
+
+        /* Card hover animation */
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        /* View switching animation */
+        .view-section {
+            display: none;
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Active navigation link style */
+        .nav-active {
+            color: #2E8B57;
+            border-bottom: 3px solid #FF69B4;
+            padding-bottom: 5px; /* Adjust padding to make space for the border */
+        }
+    </style>
+</head>
+<body class="floral-bg min-h-screen">
+
+    <!-- Global State & Data --><script>
+        // --- Dummy Data Setup (Simulated Indian Context) ---
+        const shopsData = [
+            { id: 1, name: "Lakshmi Florist", location: "Downtown (5 km)", rating: 4.8, image: "https://images.unsplash.com/photo-1544357494-1a3b0b6e9a7e?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+            { id: 2, name: "Bloom N’ Go", location: "Suburb East (2 km)", rating: 4.5, image: "https://images.unsplash.com/photo-1598918239023-e1d51a99f1c7?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+            { id: 3, name: "Nature’s Petals", location: "Old Town (12 km)", rating: 4.9, image: "https://images.unsplash.com/photo-1546736733-1498c8c5166c?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+            { id: 4, name: "The Orchid Oasis", location: "North Side (3 km)", rating: 4.7, image: "https://images.unsplash.com/photo-1548684947-975949d11529?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" }
+        ];
+
+        const FLOWER_IMAGES = {
+            'Roses': 'https://images.unsplash.com/photo-1529606279934-e408542918bb?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'Lilies': 'https://images.unsplash.com/photo-1582765809797-280d0d885a06?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'Jasmine': 'https://images.unsplash.com/photo-1616606018151-e374d6c4e0f0?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'Bouquets': 'https://images.unsplash.com/photo-1534081682855-32130311d88d?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'Orchids': 'https://images.unsplash.com/photo-1548684947-975949d11529?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'Tulips': 'https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'Sunflowers': 'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c3VuZmxvd2VyJTIwZmllbGR8ZW58MHx8MHx8fDA%3D',
+            'Carnations': 'https://images.unsplash.com/photo-1519682337058-a94d519337bc?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGNhcm5hdGlvbnMlMjBmbG93ZXJzfGVufDB8fDB8fHww',
+            'Chrysanthemums': 'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?q=80&w=1770&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2hyeXNhbnRoZW11bXN8ZW58MHx8MHx8fDA%3D'
+        };
+
+        // Prices updated for INR (Indian Rupee context)
+        const flowersData = {
+            1: [ // Lakshmi Florist 
+                { id: 101, category: 'Roses', name: 'Crimson Rose', price: 50, image: FLOWER_IMAGES.Roses },
+                { id: 102, category: 'Lilies', name: 'Stargazer Lily', price: 70, image: FLOWER_IMAGES.Lilies },
+                { id: 103, category: 'Bouquets', name: 'Romantic Mix', price: 250, image: FLOWER_IMAGES.Bouquets },
+                { id: 104, category: 'Orchids', name: 'Royal Purple Orchid', price: 120, image: FLOWER_IMAGES.Orchids },
+                { id: 105, category: 'Jasmine', name: 'Fragrant Star Jasmine', price: 35, image: FLOWER_IMAGES.Jasmine },
+                { id: 106, category: 'Tulips', name: 'Pink Sunrise Tulips', price: 90, image: FLOWER_IMAGES.Tulips },
+                { id: 107, category: 'Carnations', name: 'Crimson Celebration Carnations', price: 65, image: FLOWER_IMAGES.Carnations }
+            ],
+            2: [ // Bloom N’ Go 
+                { id: 201, category: 'Bouquets', name: 'Sunshine Bouquet', price: 220, image: FLOWER_IMAGES.Bouquets },
+                { id: 202, category: 'Lilies', name: 'Calla Lily White', price: 45, image: FLOWER_IMAGES.Lilies },
+                { id: 203, category: 'Roses', name: 'Yellow Tea Rose', price: 22, image: FLOWER_IMAGES.Roses },
+                { id: 204, category: 'Orchids', name: 'Miniature Dendrobium', price: 280, image: FLOWER_IMAGES.Orchids },
+                { id: 205, category: 'Jasmine', name: 'Mogra Jasmine', price: 18, image: FLOWER_IMAGES.Jasmine },
+                { id: 206, category: 'Sunflowers', name: 'Golden Day Sunflower Bunch', price: 150, image: FLOWER_IMAGES.Sunflowers },
+                { id: 207, category: 'Chrysanthemums', name: 'Autumn Bliss Chrysanthemums', price: 95, image: FLOWER_IMAGES.Chrysanthemums }
+            ],
+            3: [ // Nature’s Petals 
+                { id: 301, category: 'Orchids', name: 'Vanda Blue', price: 450, image: FLOWER_IMAGES.Orchids },
+                { id: 302, category: 'Roses', name: 'Pink Cloud Rose', price: 28, image: FLOWER_IMAGES.Roses },
+                { id: 303, category: 'Lilies', name: 'Tiger Lily', price: 35, image: FLOWER_IMAGES.Lilies },
+                { id: 304, category: 'Bouquets', name: 'Native Wildflower Mix', price: 300, image: FLOWER_IMAGES.Bouquets },
+                { id: 305, category: 'Jasmine', name: 'Arabian Jasmine', price: 16, image: FLOWER_IMAGES.Jasmine },
+                { id: 306, category: 'Tulips', name: 'Lavender Dusk Tulips', price: 110, image: FLOWER_IMAGES.Tulips },
+                { id: 307, category: 'Sunflowers', name: 'Himalayan Sunburst', price: 160, image: FLOWER_IMAGES.Sunflowers }
+            ],
+            4: [ // The Orchid Oasis 
+                { id: 401, category: 'Orchids', name: 'Dendrobium Hybrid', price: 300, image: FLOWER_IMAGES.Orchids },
+                { id: 402, category: 'Lilies', name: 'Oriental Lily Mix', price: 50, image: FLOWER_IMAGES.Lilies },
+                { id: 403, category: 'Roses', name: 'White Wedding Rose', price: 30, image: FLOWER_IMAGES.Roses },
+                { id: 404, category: 'Bouquets', name: 'Orchid Spray', price: 400, image: FLOWER_IMAGES.Bouquets },
+                { id: 405, category: 'Jasmine', name: 'Night-blooming Jasmine', price: 20, image: FLOWER_IMAGES.Jasmine },
+                { id: 406, category: 'Carnations', name: 'Frosted Pearl Carnations', price: 85, image: FLOWER_IMAGES.Carnations },
+                { id: 407, category: 'Chrysanthemums', name: 'Moonlight Chrysanthemum Basket', price: 140, image: FLOWER_IMAGES.Chrysanthemums }
+            ]
+        };
+
+        let currentShopId = null;
+        let currentCategoryFilter = 'All';
+        let priceAdjustmentPercent = 0;
+        let isLoggedIn = false;
+        let currentUser = null;
+
+        const USER_STORAGE_KEY = 'greenBloomUser';
+        const PRICE_ADJUSTMENT_KEY = 'greenBloomPriceAdjustment';
+        const FLOWERS_STORAGE_KEY = 'greenBloom_flowers_v1';
+    // Demo-only admin secret (change as needed)
+    const ADMIN_SECRET = 'Prasad61@';
+
+        function saveFlowersData() {
+            try {
+                localStorage.setItem(FLOWERS_STORAGE_KEY, JSON.stringify(flowersData));
+            } catch (e) { console.error('Failed to save flowers data', e); }
+        }
+
+        function loadPersistedFlowers() {
+            try {
+                const raw = localStorage.getItem(FLOWERS_STORAGE_KEY);
+                if (!raw) return;
+                const persisted = JSON.parse(raw);
+                if (persisted && typeof persisted === 'object') {
+                    // Overwrite or merge per-shop lists
+                    Object.keys(persisted).forEach(k => {
+                        try {
+                            const id = parseInt(k, 10);
+                            if (!isNaN(id) && Array.isArray(persisted[k])) {
+                                flowersData[id] = persisted[k];
+                            }
+                        } catch (e) { /* ignore */ }
+                    });
+                }
+            } catch (e) { console.error('Failed to load persisted flowers', e); }
+        }
+
+        function loadUserState() {
+            try {
+                const stored = localStorage.getItem(USER_STORAGE_KEY);
+                if (stored) {
+                    currentUser = JSON.parse(stored);
+                    isLoggedIn = true;
+                }
+                const storedAdjustment = localStorage.getItem(PRICE_ADJUSTMENT_KEY);
+                if (storedAdjustment !== null) {
+                    priceAdjustmentPercent = parseInt(storedAdjustment, 10) || 0;
+                }
+            } catch (e) {
+                console.error('Error loading user state:', e);
+            }
+        }
+
+        function saveUserState() {
+            try {
+                if (currentUser) {
+                    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(currentUser));
+                } else {
+                    localStorage.removeItem(USER_STORAGE_KEY);
+                }
+                localStorage.setItem(PRICE_ADJUSTMENT_KEY, priceAdjustmentPercent.toString());
+            } catch (e) {
+                console.error('Error saving user state:', e);
+            }
+        }
+
+        function logout() {
+            isLoggedIn = false;
+            currentUser = null;
+            priceAdjustmentPercent = 0;
+            saveUserState();
+            updateNavigation();
+            switchView('home');
+        }
+
+        function getAdjustedPrice(basePrice) {
+            const adjusted = basePrice * (1 + priceAdjustmentPercent / 100);
+            return Math.max(0, parseFloat(adjusted.toFixed(2)));
+        }
+
+        function calculateCartTotals() {
+            const cart = getCart();
+            let subtotal = 0;
+            // Sum item totals (price adjustments applied per-item)
+            cart.forEach(item => {
+                const base = item.basePrice !== undefined ? item.basePrice : item.price;
+                const adjusted = getAdjustedPrice(base);
+                subtotal += adjusted * item.quantity;
+            });
+
+            // Delivery charge: 5 ₹ per km per item (distance parsed from shop.location)
+            let delivery = 0;
+            const perKmCharge = 5; // ₹5 per km per item
+            cart.forEach(item => {
+                const dist = getShopDistanceKm(item.shopId) || 0;
+                delivery += dist * perKmCharge * (item.quantity || 1);
+            });
+
+            const grandTotal = parseFloat((subtotal + delivery).toFixed(2));
+            return { subtotal: parseFloat(subtotal.toFixed(2)), delivery: parseFloat(delivery.toFixed(2)), grandTotal };
+        }
+
+        function getShopDistanceKm(shopId) {
+            try {
+                const shop = shopsData.find(s => s.id === shopId);
+                if (!shop || !shop.location) return 0;
+                // Expect location like "Downtown (5 km)" or "Suburb East (2 km)"
+                const m = shop.location.match(/\((\s*\d+\.?\d*)\s*km\)/i);
+                if (m && m[1]) return parseFloat(m[1]);
+                // Fallback: try to extract first number
+                const m2 = shop.location.match(/(\d+\.?\d*)/);
+                if (m2 && m2[1]) return parseFloat(m2[1]);
+            } catch (e) { /* ignore */ }
+            return 0;
+        }
+
+        function updatePriceAdjustmentLabel() {
+            const label = document.getElementById('price-adjustment-value');
+            if (label) {
+                const sign = priceAdjustmentPercent > 0 ? '+' : '';
+                label.textContent = `${sign}${priceAdjustmentPercent}%`;
+            }
+        }
+
+        function handlePriceAdjustmentChange(value) {
+            if (!isLoggedIn) {
+                alert('Please log in to adjust prices.');
+                return;
+            }
+            priceAdjustmentPercent = parseInt(value, 10) || 0;
+            saveUserState();
+            
+            // Update both labels
+            updatePriceAdjustmentLabel();
+            const dashboardLabel = document.getElementById('dashboard-price-adjustment-value');
+            if (dashboardLabel) {
+                const sign = priceAdjustmentPercent > 0 ? '+' : '';
+                dashboardLabel.textContent = `${sign}${priceAdjustmentPercent}%`;
+            }
+            
+            // Sync both sliders
+            const priceSlider = document.getElementById('price-adjustment-slider');
+            const dashboardSlider = document.getElementById('dashboard-price-adjustment-slider');
+            if (priceSlider) priceSlider.value = priceAdjustmentPercent;
+            if (dashboardSlider) dashboardSlider.value = priceAdjustmentPercent;
+            
+            if (currentShopId) {
+                filterFlowers(currentCategoryFilter);
+            }
+            renderCart();
+            updateCheckoutTotal();
+        }
+
+        // --- Cart Logic (Uses localStorage as a simple persistent data store) ---
+        function getCart() {
+            try {
+                const cart = localStorage.getItem('greenBloomCart');
+                return cart ? JSON.parse(cart) : [];
+            } catch (e) {
+                console.error("Error retrieving cart from localStorage:", e);
+                return [];
+            }
+        }
+
+        function saveCart(cart) {
+            try {
+                localStorage.setItem('greenBloomCart', JSON.stringify(cart));
+            } catch (e) {
+                console.error("Error saving cart to localStorage:", e);
+            }
+        }
+
+        function addToCart(flowerId, shopId) {
+            const cart = getCart();
+            const shopFlowers = flowersData[shopId];
+            const flower = shopFlowers.find(f => f.id === flowerId);
+
+            if (!flower) {
+                console.error('Flower not found:', flowerId, shopId);
+                return;
+            }
+
+            // Ensure we handle the possibility of the shop details not being available 
+            // if data structures are complex, but here shopId is enough
+            const existingItem = cart.find(item => item.id === flowerId && item.shopId === shopId);
+
+            const adjustedPrice = getAdjustedPrice(flower.price);
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+                existingItem.price = adjustedPrice;
+                existingItem.basePrice = flower.price;
+            } else {
+                cart.push({
+                    id: flowerId,
+                    shopId: shopId,
+                    name: flower.name,
+                    price: adjustedPrice,
+                    basePrice: flower.price,
+                    quantity: 1
+                });
+            }
+
+            saveCart(cart);
+            renderCart();
+            updateCartIconCount();
+            updateCheckoutTotal();
+            
+            // Show brief message (instead of alert)
+            const messageBox = document.getElementById('message-box');
+            if (messageBox) {
+                // Remove previous message
+                messageBox.innerHTML = '';
+                // Add new message
+                messageBox.innerHTML = `<div class="bg-green-100 border border-green-400 text-primary-green px-4 py-2 rounded-lg text-sm mb-4 animate-fadeIn">Added 1 x ${flower.name} (₹${adjustedPrice.toFixed(2)}) to cart.</div>`;
+                setTimeout(() => messageBox.innerHTML = '', 3000); // Clear after 3 seconds
+            }
+        }
+
+        function updateCartQuantity(flowerId, shopId, newQuantity) {
+            let cart = getCart();
+            const index = cart.findIndex(item => item.id === flowerId && item.shopId === shopId);
+
+            if (index > -1) {
+                const quantity = parseInt(newQuantity);
+                if (quantity <= 0) {
+                    // Remove if quantity is 0 or less
+                    cart.splice(index, 1);
+                } else {
+                    cart[index].quantity = quantity;
+                }
+            }
+
+            saveCart(cart);
+            renderCart();
+            updateCartIconCount();
+            updateCheckoutTotal();
+        }
+
+        function updateCartIconCount() {
+            const cart = getCart();
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const cartCountElement = document.getElementById('cart-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = totalItems;
+                cartCountElement.classList.toggle('hidden', totalItems === 0);
+            }
+        }
+
+        let authMode = 'login';
+    let authLoginType = 'customer'; // 'customer' or 'admin'
+
+        function setAuthMode(mode = 'login') {
+            authMode = mode;
+            const loginPanel = document.getElementById('login-form-panel');
+            const signupPanel = document.getElementById('signup-form-panel');
+            const loginToggle = document.getElementById('login-toggle');
+            const signupToggle = document.getElementById('signup-toggle');
+
+            if (loginPanel && signupPanel) {
+                if (mode === 'signup') {
+                    signupPanel.classList.remove('hidden');
+                    loginPanel.classList.add('hidden');
+                } else {
+                    loginPanel.classList.remove('hidden');
+                    signupPanel.classList.add('hidden');
+                }
+            }
+
+            const toggles = [
+                { element: loginToggle, active: mode === 'login' },
+                { element: signupToggle, active: mode === 'signup' }
+            ];
+
+            toggles.forEach(({ element, active }) => {
+                if (!element) return;
+                element.classList.toggle('bg-primary-green', active);
+                element.classList.toggle('text-white', active);
+                element.classList.toggle('border-primary-green', active);
+                element.classList.toggle('bg-white', !active);
+                element.classList.toggle('text-text-dark', !active);
+            });
+        }
+
+        function setAuthLoginType(type = 'customer') {
+            authLoginType = type;
+            const customerBtn = document.getElementById('customer-login-toggle');
+            const adminBtn = document.getElementById('admin-login-toggle');
+            const signupPanel = document.getElementById('signup-form-panel');
+            // Toggle active styles
+            if (customerBtn && adminBtn) {
+                if (type === 'customer') {
+                    customerBtn.classList.add('bg-primary-green','text-white');
+                    adminBtn.classList.remove('bg-primary-green','text-white');
+                } else {
+                    adminBtn.classList.add('bg-primary-green','text-white');
+                    customerBtn.classList.remove('bg-primary-green','text-white');
+                }
+            }
+            // For admin login, hide signup panel and force login mode
+            if (type === 'admin') {
+                if (signupPanel) signupPanel.classList.add('hidden');
+                setAuthMode('login');
+            } else {
+                if (signupPanel) signupPanel.classList.remove('hidden');
+            }
+        }
+
+        function clearAuthMessages() {
+            const loginMessage = document.getElementById('login-message');
+            const signupMessage = document.getElementById('signup-message');
+            if (loginMessage) loginMessage.innerHTML = '';
+            if (signupMessage) signupMessage.innerHTML = '';
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            clearAuthMessages();
+            const emailInput = document.getElementById('login-email');
+            const passwordInput = document.getElementById('login-password');
+            const loginMessage = document.getElementById('login-message');
+            
+            const email = emailInput ? emailInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
+
+            if (!email || !password) {
+                if (loginMessage) {
+                    loginMessage.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center"><i class="fas fa-exclamation-circle mr-2"></i> Please fill in all fields.</div>`;
+                }
+                return;
+            }
+
+            // Check if user exists in localStorage
+            const storedUsers = JSON.parse(localStorage.getItem('greenBloomUsers') || '[]');
+            const user = storedUsers.find(u => u.email === email && u.password === password);
+
+            if (user) {
+                // Respect stored isAdmin flag for manager accounts
+                // If logging in via Admin login type, require the user to have isAdmin=true
+                if (authLoginType === 'admin' && !user.isAdmin) {
+                    if (loginMessage) {
+                        loginMessage.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center"><i class="fas fa-exclamation-circle mr-2"></i> This account is not an admin. Please use Customer login or sign in with an admin account.</div>`;
+                    }
+                    return;
+                }
+
+                currentUser = { name: user.name, email: user.email, phone: user.phone, isAdmin: !!user.isAdmin };
+                isLoggedIn = true;
+                saveUserState();
+                updateNavigation();
+
+                if (loginMessage) {
+                    loginMessage.innerHTML = `<div class="bg-green-100 border border-green-400 text-primary-green px-4 py-3 rounded-lg flex items-center"><i class="fas fa-check-circle mr-2"></i> Welcome back, ${user.name}! Redirecting to your dashboard...</div>`;
+                }
+
+                if (event.target) {
+                    event.target.reset();
+                }
+
+                setTimeout(() => {
+                    switchView('dashboard');
+                }, 1500);
+            } else {
+                if (loginMessage) {
+                    loginMessage.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center"><i class="fas fa-exclamation-circle mr-2"></i> Invalid email or password. Please try again.</div>`;
+                }
+            }
+        }
+
+        function handleSignup(event) {
+            event.preventDefault();
+            clearAuthMessages();
+            const nameInput = document.getElementById('signup-name');
+            const emailInput = document.getElementById('signup-email');
+            const phoneInput = document.getElementById('signup-phone');
+            const passwordInput = document.getElementById('signup-password');
+            const signupMessage = document.getElementById('signup-message');
+
+            const name = nameInput ? nameInput.value.trim() : '';
+            const email = emailInput ? emailInput.value.trim() : '';
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
+
+            if (!name || !email || !password) {
+                if (signupMessage) {
+                    signupMessage.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center"><i class="fas fa-exclamation-circle mr-2"></i> Please fill in all required fields.</div>`;
+                }
+                return;
+            }
+
+            // Store user data
+            const storedUsers = JSON.parse(localStorage.getItem('greenBloomUsers') || '[]');
+            
+            // Check if email already exists
+            if (storedUsers.find(u => u.email === email)) {
+                if (signupMessage) {
+                    signupMessage.innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center"><i class="fas fa-exclamation-circle mr-2"></i> An account with this email already exists. Please sign in instead.</div>`;
+                }
+                return;
+            }
+
+            const newUser = { name, email, phone, password };
+            storedUsers.push(newUser);
+            localStorage.setItem('greenBloomUsers', JSON.stringify(storedUsers));
+
+            currentUser = { name, email, phone };
+            isLoggedIn = true;
+            saveUserState();
+            updateNavigation();
+
+            if (signupMessage) {
+                signupMessage.innerHTML = `<div class="bg-blue-100 border border-blue-400 text-blue-800 px-4 py-3 rounded-lg flex items-center"><i class="fas fa-user-plus mr-2"></i> Thanks for joining us, ${name}! Redirecting to your dashboard...</div>`;
+            }
+
+            if (event.target) {
+                event.target.reset();
+            }
+
+            setTimeout(() => {
+                switchView('dashboard');
+            }, 1500);
+        }
+
+        function updateNavigation() {
+            const authLink = document.querySelector('a[data-view="auth"]');
+            const profileLink = document.getElementById('profile-nav-link');
+            const pricePanel = document.getElementById('price-adjustment-panel');
+            const infoPanel = document.getElementById('login-info-panel');
+            
+            if (isLoggedIn) {
+                if (authLink) {
+                    authLink.style.display = 'none';
+                }
+                if (!profileLink) {
+                    // Create profile link if it doesn't exist
+                    const nav = document.querySelector('nav.hidden.md\\:flex');
+                    if (nav) {
+                        const link = document.createElement('a');
+                        link.href = '#';
+                        link.id = 'profile-nav-link';
+                        link.dataset.view = 'dashboard';
+                        link.className = 'nav-link text-text-dark hover:text-primary-green transition-colors py-2';
+                        link.onclick = () => switchView('dashboard');
+                        link.innerHTML = '<i class="fas fa-user-circle mr-2"></i> My Account';
+                        nav.appendChild(link);
+                    }
+                    const mobileNav = document.getElementById('mobile-menu');
+                    if (mobileNav) {
+                        const mobileLink = document.createElement('a');
+                        mobileLink.href = '#';
+                        mobileLink.dataset.view = 'dashboard';
+                        mobileLink.className = 'nav-link block px-3 py-2 rounded-md text-base font-medium text-text-dark hover:bg-gray-100';
+                        mobileLink.onclick = () => switchView('dashboard');
+                        mobileLink.textContent = 'My Account';
+                        mobileNav.querySelector('nav').appendChild(mobileLink);
+                    }
+                } else {
+                    profileLink.style.display = '';
+                }
+                
+                // Show price adjustment panel, hide info panel
+                if (pricePanel) pricePanel.classList.remove('hidden');
+                if (infoPanel) infoPanel.classList.add('hidden');
+            } else {
+                if (authLink) {
+                    authLink.style.display = '';
+                }
+                if (profileLink) {
+                    profileLink.style.display = 'none';
+                }
+                
+                // Hide price adjustment panel, show info panel
+                if (pricePanel) pricePanel.classList.add('hidden');
+                if (infoPanel) infoPanel.classList.remove('hidden');
+            }
+        }
+
+        // --- View Navigation & Rendering ---
+
+        function updateActiveNav(targetView) {
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                if (link.dataset.view === targetView) {
+                    link.classList.add('nav-active', 'font-semibold');
+                } else {
+                    link.classList.remove('nav-active', 'font-semibold');
+                }
+            });
+        }
+
+        function switchView(viewId, payload = null) {
+            // Hide all sections
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.style.display = 'none';
+                section.style.opacity = '0';
+            });
+
+            // Show the target section
+            const targetSection = document.getElementById(viewId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                // Trigger the CSS animation
+                setTimeout(() => targetSection.style.opacity = '1', 10);
+                
+                // Update navigation active state
+                updateActiveNav(viewId);
+            }
+            
+            // Handle view-specific rendering
+            if (viewId === 'shops') {
+                renderShops('all'); // Render all shops initially
+            } else if (viewId === 'shop-details' && payload) {
+                currentShopId = payload;
+                renderShopDetails(payload);
+            } else if (viewId === 'cart') {
+                renderCart();
+            } else if (viewId === 'checkout') {
+                // Clear previous messages on entering checkout
+                const messageBox = document.getElementById('payment-message-box');
+                if (messageBox) messageBox.innerHTML = '';
+                updateCheckoutTotal(); // <-- Fix: Ensure total is updated on checkout view
+                togglePaymentFields();
+            }
+            else if (viewId === 'auth') {
+                clearAuthMessages();
+                setAuthMode('login');
+                if (isLoggedIn) {
+                    switchView('dashboard');
+                    return;
+                }
+            } else if (viewId === 'dashboard') {
+                if (!isLoggedIn) {
+                    switchView('auth');
+                    return;
+                }
+                renderDashboard();
+            }
+            
+            // Scroll to the top of the main content area
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderDashboard() {
+            if (!currentUser) return;
+
+            const nameEl = document.getElementById('dashboard-name');
+            const emailEl = document.getElementById('dashboard-email');
+            const phoneEl = document.getElementById('dashboard-phone');
+            const joinDateEl = document.getElementById('dashboard-join-date');
+
+            if (nameEl) nameEl.textContent = currentUser.name;
+            if (emailEl) emailEl.textContent = currentUser.email;
+            if (phoneEl) {
+                phoneEl.textContent = currentUser.phone || 'Not provided';
+                phoneEl.parentElement.style.display = currentUser.phone ? 'block' : 'none';
+            }
+            if (joinDateEl) {
+                const joinDate = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+                joinDateEl.textContent = joinDate;
+            }
+
+            // Admin controls: allow entering admin code and show admin badge
+            const adminControls = document.getElementById('admin-controls');
+            if (adminControls) {
+                adminControls.innerHTML = '';
+                if (currentUser && currentUser.isAdmin) {
+                    adminControls.innerHTML = `<div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">Admin: privileged account — you can add/edit/remove flowers.</div>`;
+                } else {
+                    adminControls.innerHTML = `<div class="mt-4"><button onclick="promptAdminCode()" class="bg-primary-green text-white px-4 py-2 rounded-md">Enter Admin Code</button></div>`;
+                }
+            }
+
+            // Update both price adjustment labels and sliders
+            updatePriceAdjustmentLabel();
+            const dashboardLabel = document.getElementById('dashboard-price-adjustment-value');
+            if (dashboardLabel) {
+                const sign = priceAdjustmentPercent > 0 ? '+' : '';
+                dashboardLabel.textContent = `${sign}${priceAdjustmentPercent}%`;
+            }
+            const dashboardSlider = document.getElementById('dashboard-price-adjustment-slider');
+            if (dashboardSlider) {
+                dashboardSlider.value = priceAdjustmentPercent;
+            }
+        }
+
+        function renderShops(filter = 'all') {
+            const container = document.getElementById('shops-list-container');
+            let filteredShops = [...shopsData]; // Use a copy
+            
+            // Simulated Location Filtering
+            const filterMessage = document.getElementById('filter-message');
+            
+            const btnNear = document.getElementById('location-filter-near');
+            const btnAll = document.getElementById('location-filter-all');
+            
+            // Reset button styles
+            btnNear.classList.remove('bg-primary-green', 'text-white', 'bg-gray-100', 'border-gray-300', 'text-text-dark');
+            btnAll.classList.remove('bg-primary-green', 'text-white', 'bg-gray-100', 'border-gray-300', 'text-text-dark');
+            btnNear.classList.add('border', 'border-gray-300', 'bg-white', 'text-text-dark');
+            btnAll.classList.add('border', 'border-gray-300', 'bg-white', 'text-text-dark');
+
+            
+            if (filter === 'nearby') {
+                filteredShops.sort((a, b) => {
+                    const distA = parseFloat(a.location.match(/\((\d+)/)[1]);
+                    const distB = parseFloat(b.location.match(/\((\d+)/)[1]);
+                    return distA - distB;
+                });
+                if (filterMessage) filterMessage.textContent = 'Showing shops sorted by nearest location.';
+                
+                // Update active button style
+                btnNear.classList.add('bg-primary-green', 'text-white');
+                btnNear.classList.remove('border', 'border-gray-300', 'bg-white', 'text-text-dark');
+
+            } else { // 'all'
+                if (filterMessage) filterMessage.textContent = 'Showing all available shops.';
+                
+                // Update active button style
+                btnAll.classList.add('bg-primary-green', 'text-white');
+                btnAll.classList.remove('border', 'border-gray-300', 'bg-white', 'text-text-dark');
+            }
+
+            container.innerHTML = filteredShops.map(shop => `
+                <div class="card bg-white p-9 rounded-xl shadow-lg transition-all-smooth border-t-4 border-primary-green/50 flex flex-col justify-between">
+                    <div>
+                        <img src="${shop.image}" alt="${shop.name}" onerror="this.onerror=null; this.src='pic1.png'" class="rounded-lg mb-6 w-60 h-30 object-cover">
+                        <h3 class="text-xl font-semibold text-text-dark mb-2">${shop.name}</h3>
+                        <p class="text-sm text-gray-500 mb-3 flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2 text-primary-green"></i> ${shop.location}
+                        </p>
+                        <p class="text-sm text-gray-500 mb-4 flex items-center">
+                            <i class="fas fa-star mr-2 text-yellow-500"></i> ${shop.rating} Rating
+                        </p>
+                    </div>
+                    <button onclick="switchView('shop-details', ${shop.id})" 
+                            class="mt-4 w-full bg-accent-pink bg-pink-400 text-white font-semibold py-2 rounded-lg transition-all-smooth btn-primary">
+                        View Shop
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderShopDetails(shopId) {
+            const shop = shopsData.find(s => s.id === shopId);
+            const flowers = flowersData[shopId];
+            
+            if (!shop || !flowers) return;
+
+            document.getElementById('shop-details-title').textContent = shop.name;
+            document.getElementById('shop-details-location').textContent = `${shop.location} (${shop.rating} ★)`;
+            // Controls area for shop management (Add Flower, etc.)
+            const controlsContainer = document.getElementById('shop-details-controls');
+            if (controlsContainer) {
+                controlsContainer.innerHTML = '';
+                // Only allow admins to add flowers via the admin form
+                if (isLoggedIn && currentUser && currentUser.isAdmin) {
+                    const addBtn = document.createElement('button');
+                    addBtn.className = 'ml-4 bg-primary-green text-white px-4 py-2 rounded-lg';
+                    addBtn.textContent = 'Add Flower (Admin)';
+                    addBtn.onclick = () => showAddFlowerForm(shopId);
+                    controlsContainer.appendChild(addBtn);
+                }
+            }
+            
+            // Add 'All' as the first category
+            const categories = ['All', ...new Set(flowers.map(f => f.category))];
+            const categoriesContainer = document.getElementById('flower-categories');
+            
+            // Render categories tabs with improved styling
+            categoriesContainer.innerHTML = categories.map(cat => `
+                <button onclick="filterFlowers('${cat}')" 
+                        class="category-tab px-4 py-2 mr-2 mb-2 rounded-lg text-sm font-medium transition-colors 
+                        ${cat === 'All' ? 'bg-primary-green text-white' : 'bg-white text-text-dark border border-gray-300 hover:bg-gray-100'}">
+                    ${cat}
+                </button>
+            `).join('');
+
+            // Automatically filter to 'All'
+            filterFlowers('All');
+        }
+
+        // --- Admin: Add / Remove / Edit flower entries ---
+        function promptAddFlower(shopId) {
+            const name = prompt('Flower name (e.g. Crimson Rose):');
+            if (!name) return;
+            const category = prompt('Category (e.g. Roses, Bouquets):', 'Bouquets') || 'Bouquets';
+            const priceRaw = prompt('Price in ₹ (numeric):', '100');
+            const price = parseFloat(priceRaw);
+            if (isNaN(price) || price < 0) { alert('Invalid price'); return; }
+            const image = prompt('Image URL (optional):', '') || '';
+            const newFlower = { category, name, price: parseFloat(price.toFixed(2)), image };
+            addFlower(shopId, newFlower);
+        }
+
+        function addFlower(shopId, flower) {
+            try {
+                if (!flowersData[shopId]) flowersData[shopId] = [];
+                // Ensure unique id
+                let maxId = 0;
+                Object.values(flowersData).forEach(arr => arr.forEach(f => { if (f.id && f.id > maxId) maxId = f.id; }));
+                const id = maxId + 1;
+                const entry = Object.assign({ id }, flower);
+                flowersData[shopId].push(entry);
+                saveFlowersData();
+                if (currentShopId === shopId) {
+                    renderShopDetails(shopId);
+                    filterFlowers(currentCategoryFilter || 'All');
+                }
+                const msg = document.getElementById('message-box-shop');
+                if (msg) msg.innerHTML = `<div class="bg-green-100 border border-green-400 text-primary-green px-4 py-2 rounded-lg text-sm mb-4">Added ${flower.name}.</div>`;
+                setTimeout(() => { if (msg) msg.innerHTML = ''; }, 3000);
+            } catch (e) { console.error('addFlower failed', e); }
+        }
+
+        function removeFlower(flowerId, shopId) {
+            if (!confirm('Remove this flower from the shop? This action cannot be undone.')) return;
+            try {
+                const arr = flowersData[shopId] || [];
+                const idx = arr.findIndex(f => f.id === flowerId);
+                if (idx === -1) return;
+                const removed = arr.splice(idx, 1)[0];
+                saveFlowersData();
+                if (currentShopId === shopId) filterFlowers(currentCategoryFilter || 'All');
+                const msg = document.getElementById('message-box-shop');
+                if (msg) msg.innerHTML = `<div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 rounded-lg text-sm mb-4">Removed ${removed.name}.</div>`;
+                setTimeout(() => { if (msg) msg.innerHTML = ''; }, 3000);
+            } catch (e) { console.error('removeFlower failed', e); }
+        }
+
+        function startEditPrice(flowerId, shopId) {
+            try {
+                // Replace the price area with an edit form that can change name, price and image
+                const priceEl = document.getElementById(`price-${shopId}-${flowerId}`);
+                if (!priceEl) return;
+                const shopArr = flowersData[shopId] || [];
+                const flower = shopArr.find(f => f.id === flowerId);
+                if (!flower) return;
+                const currentPrice = flower.price;
+                const currentName = flower.name || '';
+                const currentImage = flower.image || '';
+                priceEl.innerHTML = `
+                    <div class="space-y-2">
+                        <input type="text" id="edit-name-input-${shopId}-${flowerId}" value="${escapeHtml(currentName)}" class="w-full p-1 border rounded-md" />
+                        <input type="number" id="edit-price-input-${shopId}-${flowerId}" value="${currentPrice}" min="0" step="0.01" class="w-32 p-1 border rounded-md" />
+                        <input type="text" id="edit-image-input-${shopId}-${flowerId}" value="${escapeHtml(currentImage)}" class="w-full p-1 border rounded-md" placeholder="Image URL (optional)" />
+                        <div>
+                            <button onclick="saveEditFlower(${flowerId}, ${shopId})" class="ml-0 bg-primary-green text-white px-3 py-1 rounded-md">Save</button>
+                            <button onclick="cancelEditPrice(${flowerId}, ${shopId})" class="ml-2 bg-gray-100 text-gray-700 px-3 py-1 rounded-md">Cancel</button>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { console.error('startEditPrice', e); }
+        }
+
+        function saveEditPrice(flowerId, shopId) {
+            try {
+                // Gather inputs for name, price and image (edit form supports all three)
+                const priceInput = document.getElementById(`edit-price-input-${shopId}-${flowerId}`);
+                const nameInput = document.getElementById(`edit-name-input-${shopId}-${flowerId}`);
+                const imageInput = document.getElementById(`edit-image-input-${shopId}-${flowerId}`);
+                if (!priceInput) return;
+                const val = parseFloat(priceInput.value);
+                if (isNaN(val) || val < 0) { alert('Please enter a valid price'); return; }
+                const newName = nameInput ? nameInput.value.trim() : null;
+                const newImage = imageInput ? imageInput.value.trim() : null;
+                const arr = flowersData[shopId] || [];
+                const flower = arr.find(f => f.id === flowerId);
+                if (!flower) return;
+                flower.price = parseFloat(val.toFixed(2));
+                if (newName) flower.name = newName;
+                if (newImage !== null) flower.image = newImage;
+                saveFlowersData();
+                // Refresh UI
+                filterFlowers(currentCategoryFilter || 'All');
+                const msg = document.getElementById('message-box-shop');
+                if (msg) msg.innerHTML = `<div class="bg-green-100 border border-green-400 text-primary-green px-4 py-2 rounded-lg text-sm mb-4">Flower updated.</div>`;
+                setTimeout(() => { if (msg) msg.innerHTML = ''; }, 2500);
+            } catch (e) { console.error('saveEditPrice', e); }
+        }
+
+        function cancelEditPrice(flowerId, shopId) {
+            // Simply re-render the current filter to restore the display
+            filterFlowers(currentCategoryFilter || 'All');
+        }
+
+        // Small helper to escape HTML attributes when injecting values into inputs
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return String(unsafe).replace(/[&<>"'`=\/]/g, function (s) {
+                return ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;',
+                    '/': '&#x2F;',
+                    '`': '&#x60;',
+                    '=': '&#x3D;'
+                })[s];
+            });
+        }
+
+        // --- Admin: Add Flower via a small inline form (visible only to admins) ---
+        function showAddFlowerForm(shopId) {
+            const controls = document.getElementById('shop-details-controls');
+            if (!controls) return;
+            controls.innerHTML = `
+                <div class="bg-white p-4 rounded-md shadow-sm border border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input id="admin-add-name" placeholder="Flower name" class="p-2 border rounded" />
+                        <input id="admin-add-category" placeholder="Category (e.g. Roses)" class="p-2 border rounded" />
+                        <input id="admin-add-price" type="number" step="0.01" min="0" placeholder="Price in ₹" class="p-2 border rounded" />
+                        <input id="admin-add-image" placeholder="Image URL (optional)" class="p-2 border rounded" />
+                    </div>
+                    <div class="mt-3 flex space-x-2">
+                        <button onclick="submitAddFlowerForm(${shopId})" class="bg-primary-green text-white px-4 py-2 rounded">Add Flower</button>
+                        <button onclick="cancelAddFlowerForm(${shopId})" class="bg-gray-100 text-gray-700 px-4 py-2 rounded">Cancel</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function submitAddFlowerForm(shopId) {
+            const name = (document.getElementById('admin-add-name') || {}).value;
+            const category = (document.getElementById('admin-add-category') || {}).value || 'Bouquets';
+            const priceRaw = (document.getElementById('admin-add-price') || {}).value;
+            const image = (document.getElementById('admin-add-image') || {}).value || '';
+            const price = parseFloat(priceRaw);
+            if (!name || isNaN(price) || price < 0) {
+                alert('Please provide a valid name and a non-negative price.');
+                return;
+            }
+            const newFlower = { category, name, price: parseFloat(price.toFixed(2)), image };
+            addFlower(shopId, newFlower);
+            // Restore controls (show Add Flower button again for admin)
+            renderShopDetails(shopId);
+        }
+
+        function cancelAddFlowerForm(shopId) {
+            // Restore controls
+            renderShopDetails(shopId);
+        }
+
+        // --- Admin activation: allow entering a secret admin code (demo only) ---
+        function promptAdminCode() {
+            // Show admin code modal (requires user to be logged in)
+            if (!isLoggedIn || !currentUser) {
+                alert('Please login first as a user to activate admin.');
+                return;
+            }
+            showModal('admin-code-modal');
+        }
+        
+        function filterFlowers(category) {
+            const shopId = currentShopId;
+            const flowers = flowersData[shopId];
+            currentCategoryFilter = category;
+            
+            const filtered = category === 'All' 
+                ? flowers 
+                : flowers.filter(f => f.category === category);
+            
+            const itemsContainer = document.getElementById('flower-items-container');
+
+            // Update active category tab style
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                const isActive = tab.textContent.trim() === category;
+                
+                tab.classList.remove('bg-primary-green', 'text-white', 'bg-white', 'text-text-dark', 'border', 'border-gray-300', 'hover:bg-gray-100');
+                
+                if (isActive) {
+                    tab.classList.add('bg-primary-green', 'text-white');
+                } else {
+                    tab.classList.add('bg-white', 'text-text-dark', 'border', 'border-gray-300', 'hover:bg-gray-100');
+                }
+            });
+            
+            // If the message box doesn't exist yet (first render), insert it
+            if (!document.getElementById('message-box-shop')) {
+                itemsContainer.insertAdjacentHTML('beforebegin', '<div id="message-box-shop" class="mb-4"></div>');
+            }
+
+            // Render flower items with enhanced card structure
+            itemsContainer.innerHTML = filtered.map(flower => {
+                const adjustedPrice = getAdjustedPrice(flower.price);
+                return `
+                <div class="card bg-white rounded-xl shadow-lg transition-all-smooth border border-gray-100 overflow-hidden">
+                    <!-- Flower Image -->
+                    <img src="${flower.image}" alt="${flower.name}" onerror="this.onerror=null; this.src='https://placehold.co/300x192/2E8B57/ffffff?text=Flower'" class="w-full h-48 object-cover"> 
+                    
+                    <!-- Content Area -->
+                    <div class="p-4 flex flex-col items-start">
+                        <h4 class="font-semibold text-text-dark text-lg mb-1">${flower.name}</h4>
+                        <!-- Price is bold and green, using ₹ -->
+                            <p id="price-${shopId}-${flower.id}" class="text-xl font-extrabold text-primary-green my-2">₹${adjustedPrice.toFixed(2)}</p>
+                        
+                        <!-- Button with cart icon -->
+                        <button onclick="addToCart(${flower.id}, ${shopId})" 
+                                class="mt-2 w-full bg-accent-pink bg-red-400 text-white font-semibold py-2 rounded-lg text-base transition-all-smooth btn-primary flex items-center justify-center">
+                            <i class="fas fa-shopping-cart mr-2"></i> Add to Cart
+                        </button>
+                            ${(isLoggedIn && currentUser && currentUser.isAdmin) ? `
+                            <div class="mt-3 flex space-x-2 w-full">
+                                <button onclick="startEditPrice(${flower.id}, ${shopId})" class="w-1/2 bg-yellow-400 text-black py-2 rounded-md">Edit Price</button>
+                                <button onclick="removeFlower(${flower.id}, ${shopId})" class="w-1/2 bg-red-100 text-red-700 border border-red-300 py-2 rounded-md">Remove</button>
+                            </div>
+                            ` : ''}
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        function renderCart() {
+            const cart = getCart();
+            const container = document.getElementById('cart-items-container');
+            const totalDisplay = document.getElementById('cart-total');
+            const proceedButton = document.getElementById('cart-proceed-button');
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Your cart is empty. Start adding some fresh blooms!</p>';
+                if (totalDisplay) totalDisplay.textContent = '₹0.00';
+                if (proceedButton) proceedButton.classList.add('hidden');
+                return;
+            }
+
+            if (proceedButton) proceedButton.classList.remove('hidden');
+
+            const itemsHtml = cart.map(item => {
+                const basePrice = item.basePrice !== undefined ? item.basePrice : item.price;
+                const adjustedPrice = getAdjustedPrice(basePrice);
+                const itemTotal = adjustedPrice * item.quantity;
+                const shop = shopsData.find(s => s.id === item.shopId);
+                const shopName = shop ? shop.name : `Shop ${item.shopId}`;
+
+                return `
+                    <div class="flex justify-between items-center py-3 border-b border-gray-100 px-2 rounded-lg transition-colors hover:bg-gray-50">
+                        <div class="flex flex-col flex-grow">
+                            <span class="font-medium text-text-dark">${item.name}</span>
+                            <span class="text-sm text-gray-500">from ${shopName} | ₹${adjustedPrice.toFixed(2)} / item</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="number" 
+                                    value="${item.quantity}" 
+                                    min="1" 
+                                    onchange="updateCartQuantity(${item.id}, ${item.shopId}, this.value)"
+                                    class="w-16 text-center border rounded-lg py-1 px-2 focus:ring-primary-green focus:border-primary-green">
+                            <span class="font-semibold w-20 text-right text-primary-green">₹${itemTotal.toFixed(2)}</span>
+                            <button onclick="updateCartQuantity(${item.id}, ${item.shopId}, 0)" 
+                                    class="text-red-500 hover:text-red-700 transition-colors p-1" title="Remove Item">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = itemsHtml;
+            const { subtotal, delivery } = calculateCartTotals();
+            if (totalDisplay) totalDisplay.textContent = `₹${subtotal.toFixed(2)}`;
+            const deliveryEl = document.getElementById('cart-delivery');
+            if (deliveryEl) deliveryEl.textContent = `₹${delivery.toFixed(2)}`;
+        }
+        
+                function updateCheckoutTotal() {
+                         const { grandTotal, delivery } = calculateCartTotals();
+                         const totalDisplay = document.getElementById('cart-total-checkout');
+                         const deliveryDisplay = document.getElementById('cart-delivery-checkout');
+                         if (deliveryDisplay) deliveryDisplay.textContent = `₹${delivery.toFixed(2)}`;
+                         if (totalDisplay) {
+                             totalDisplay.textContent = `₹${grandTotal.toFixed(2)}`;
+                         }
+                }
+
+        function handlePayment(event) {
+            event.preventDefault();
+            const messageBox = document.getElementById('payment-message-box');
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked');
+            const upiInput = document.getElementById('upi-id');
+            const { grandTotal } = calculateCartTotals();
+            const formattedTotal = `₹${grandTotal.toFixed(2)}`;
+
+            if (!paymentMethod) {
+                messageBox.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert"><strong class="font-bold">Error:</strong> Please choose a payment method.</div>';
+                return;
+            }
+
+            if (paymentMethod.value === 'cod') {
+                messageBox.innerHTML = `
+                    <div class="bg-blue-100 border border-blue-400 text-blue-800 px-4 py-3 rounded relative" role="alert">
+                        <strong class="font-bold">Cash on Delivery Confirmed.</strong> Please keep ${formattedTotal} ready. Our delivery partner will collect it when the flowers arrive.
+                    </div>
+                `;
+                finalizeOrder(3000);
+                return;
+            }
+
+            const upiId = upiInput ? upiInput.value.trim() : '';
+            if (!upiId) {
+                messageBox.innerHTML = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert"><strong class="font-bold">Error:</strong> Please enter a UPI ID.</div>';
+                return;
+            }
+
+            messageBox.innerHTML = '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative flex items-center"><i class="fas fa-spinner fa-spin mr-3"></i> Processing payment for ' + formattedTotal + '...</div>';
+
+            setTimeout(() => {
+                messageBox.innerHTML = `
+                    <div class="bg-green-100 border border-green-400 text-primary-green px-4 py-3 rounded relative" role="alert">
+                        <strong class="font-bold">Payment Successful!</strong> We received your UPI payment of ${formattedTotal}. Thank you for shopping with GreenBloom Farms 🌸.
+                    </div>
+                `;
+                finalizeOrder(4000);
+            }, 2000);
+        }
+
+        function demoManagerLogin() {
+            setAuthLoginType('admin');
+            const emailInput = document.getElementById('login-email');
+            const passwordInput = document.getElementById('login-password');
+            const loginForm = document.getElementById('login-form');
+            if (!emailInput || !passwordInput || !loginForm) return;
+            emailInput.value = 'manager@greenbloom.com';
+            passwordInput.value = 'manager123';
+            // Use requestSubmit if available so our submit handler runs
+            if (typeof loginForm.requestSubmit === 'function') {
+                loginForm.requestSubmit();
+            } else {
+                // Fallback: dispatch submit event
+                loginForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+        }
+
+        // Create an admin account from the signup panel if the correct admin code is provided
+        function createAdminAccountPrompt() {
+            // Show the admin account creation modal (protected by secret code)
+            showModal('create-admin-modal');
+        }
+
+        // Modal helpers and handlers
+        function showModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) overlay.classList.remove('hidden');
+            // trap focus by focusing first input if present
+            const first = modal.querySelector('input, button, textarea');
+            if (first) first.focus();
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.add('hidden');
+            const overlay = document.getElementById('modal-overlay');
+            if (overlay) overlay.classList.add('hidden');
+        }
+
+        function submitAdminCodeForm(event) {
+            event.preventDefault();
+            const codeInput = document.getElementById('admin-code-input');
+            const code = codeInput ? codeInput.value.trim() : '';
+            const SECRET = ADMIN_SECRET;
+            if (code === SECRET) {
+                currentUser.isAdmin = true;
+                try {
+                    const key = 'greenBloomUsers';
+                    const stored = JSON.parse(localStorage.getItem(key) || '[]');
+                    const idx = stored.findIndex(u => u.email === currentUser.email);
+                    if (idx > -1) {
+                        stored[idx].isAdmin = true;
+                        localStorage.setItem(key, JSON.stringify(stored));
+                    }
+                } catch (e) { console.error('Failed to persist admin flag on stored users', e); }
+                saveUserState();
+                updateNavigation();
+                renderDashboard();
+                closeModal('admin-code-modal');
+                alert('Admin privileges granted for this account (persisted locally).');
+            } else {
+                const error = document.getElementById('admin-code-error');
+                if (error) error.textContent = 'Invalid admin code.';
+            }
+        }
+
+        function submitCreateAdminForm(event) {
+            event.preventDefault();
+            const secret = (document.getElementById('create-admin-secret') || {}).value || '';
+            const SECRET = ADMIN_SECRET;
+            if (secret.trim() !== SECRET) {
+                const err = document.getElementById('create-admin-error');
+                if (err) err.textContent = 'Invalid creation code.';
+                return;
+            }
+            const name = (document.getElementById('create-admin-name') || {}).value || '';
+            const email = (document.getElementById('create-admin-email') || {}).value || '';
+            const password = (document.getElementById('create-admin-password') || {}).value || '';
+            if (!name || !email || !password) {
+                const err = document.getElementById('create-admin-error');
+                if (err) err.textContent = 'Please fill all fields.';
+                return;
+            }
+            try {
+                const key = 'greenBloomUsers';
+                const stored = JSON.parse(localStorage.getItem(key) || '[]');
+                if (stored.find(u => u.email === email)) {
+                    const err = document.getElementById('create-admin-error');
+                    if (err) err.textContent = 'A user with that email already exists.';
+                    return;
+                }
+                const adminUser = { name, email, phone: '', password, isAdmin: true };
+                stored.push(adminUser);
+                localStorage.setItem(key, JSON.stringify(stored));
+                closeModal('create-admin-modal');
+                alert('Admin account created. You can now log in as that admin.');
+            } catch (e) { console.error('Failed creating admin account', e); alert('Failed to create admin account.'); }
+        }
+
+        function closeAllModals() {
+            closeModal('admin-code-modal');
+            closeModal('create-admin-modal');
+        }
+
+        // Backwards-compatible wrapper (some buttons call saveEditFlower)
+        function saveEditFlower(flowerId, shopId) {
+            return saveEditPrice(flowerId, shopId);
+        }
+
+        function finalizeOrder(redirectDelay = 4000) {
+            saveCart([]);
+            updateCartIconCount();
+            renderCart();
+            updateCheckoutTotal();
+
+            setTimeout(() => {
+                switchView('home');
+            }, redirectDelay);
+        }
+
+        function togglePaymentFields() {
+            const upiWrapper = document.getElementById('upi-field-wrapper');
+            const upiInput = document.getElementById('upi-id');
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked');
+
+            if (!upiWrapper || !upiInput) return;
+
+            const showUpi = paymentMethod && paymentMethod.value === 'upi';
+            if (showUpi) {
+                upiWrapper.classList.remove('hidden');
+                upiInput.required = true;
+            } else {
+                upiWrapper.classList.add('hidden');
+                upiInput.required = false;
+                upiInput.value = '';
+            }
+        }
+
+        // Ensure a demo manager user exists in localStorage so you can log in as manager for full control
+        function ensureManagerAccount() {
+            try {
+                const key = 'greenBloomUsers';
+                const stored = JSON.parse(localStorage.getItem(key) || '[]');
+                const managerEmail = 'manager@greenbloom.com';
+                const exists = stored.find(u => u.email === managerEmail);
+                if (!exists) {
+                    const manager = {
+                        name: 'Store Manager',
+                        email: managerEmail,
+                        phone: '',
+                        password: 'manager123',
+                        isAdmin: true
+                    };
+                    stored.push(manager);
+                    localStorage.setItem(key, JSON.stringify(stored));
+                    console.info('Demo manager account created: manager@greenbloom.com / manager123');
+                }
+            } catch (e) {
+                console.error('Failed to ensure manager account', e);
+            }
+        }
+        
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ensure demo manager account exists (email: manager@greenbloom.com / password: manager123)
+            ensureManagerAccount();
+
+            // Load user state first
+            loadUserState();
+            // Load any persisted modifications to flowers (add/remove/price edits)
+            loadPersistedFlowers();
+            updateNavigation();
+            
+            // Update auth section visibility
+            const pricePanel = document.getElementById('price-adjustment-panel');
+            const infoPanel = document.getElementById('login-info-panel');
+            if (pricePanel && infoPanel) {
+                if (isLoggedIn) {
+                    pricePanel.classList.remove('hidden');
+                    infoPanel.classList.add('hidden');
+                } else {
+                    pricePanel.classList.add('hidden');
+                    infoPanel.classList.remove('hidden');
+                }
+            }
+
+            switchView('home'); // Load the home view first
+            updateCartIconCount(); // Update the cart icon count on load
+            renderCart();
+            updateCheckoutTotal();
+            updatePriceAdjustmentLabel();
+
+            // Event listeners for mock location filtering
+            const nearBtn = document.getElementById('location-filter-near');
+            const allBtn = document.getElementById('location-filter-all');
+            if (nearBtn) {
+                nearBtn.addEventListener('click', () => {
+                    renderShops('nearby');
+                });
+            }
+            if (allBtn) {
+                allBtn.addEventListener('click', () => {
+                    renderShops('all');
+                });
+            }
+
+            // Mobile Menu Toggle Logic
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+
+                // Also close menu when a mobile link is clicked
+                mobileMenu.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        // Delay closing to allow view switch animation to start
+                        setTimeout(() => mobileMenu.classList.add('hidden'), 100); 
+                    });
+                });
+            }
+
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+            }
+
+            const signupForm = document.getElementById('signup-form');
+            if (signupForm) {
+                signupForm.addEventListener('submit', handleSignup);
+            }
+
+            // Price adjustment sliders (both auth and dashboard)
+            const priceSlider = document.getElementById('price-adjustment-slider');
+            if (priceSlider) {
+                priceSlider.value = priceAdjustmentPercent;
+                priceSlider.addEventListener('input', (event) => {
+                    handlePriceAdjustmentChange(event.target.value);
+                });
+            }
+
+            const dashboardPriceSlider = document.getElementById('dashboard-price-adjustment-slider');
+            if (dashboardPriceSlider) {
+                dashboardPriceSlider.value = priceAdjustmentPercent;
+                dashboardPriceSlider.addEventListener('input', (event) => {
+                    handlePriceAdjustmentChange(event.target.value);
+                });
+            }
+
+            // Initialize login type toggles
+            setAuthLoginType('customer');
+
+            const paymentRadios = document.querySelectorAll('input[name="payment-method"]');
+            paymentRadios.forEach(radio => radio.addEventListener('change', togglePaymentFields));
+            togglePaymentFields();
+
+            setAuthMode('login');
+        });
+    </script>
+
+    <!-- HEADER --><header class="sticky top-0 z-50 bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo --><a href="#" onclick="switchView('home')" class="flex items-center text-2xl font-bold text-primary-green transition-all-smooth hover:opacity-80">
+                    <span class="text-accent-pink text-3xl mr-2">🌼</span> GreenBloom Farms
+                </a>
+
+                <!-- Desktop Navigation --><nav class="hidden md:flex space-x-8">
+                    <a href="#" data-view="home" class="nav-link text-text-dark hover:text-primary-green transition-colors py-2" onclick="switchView('home')">Home</a>
+                    <a href="#" data-view="shops" class="nav-link text-text-dark hover:text-primary-green transition-colors py-2" onclick="switchView('shops')">Shops</a>
+                    <a href="#" data-view="about" class="nav-link text-text-dark hover:text-primary-green transition-colors py-2" onclick="switchView('about')">About</a>
+                    <a href="#" data-view="contact" class="nav-link text-text-dark hover:text-primary-green transition-colors py-2" onclick="switchView('contact')">Contact</a>
+                    <a href="#" data-view="auth" class="nav-link text-text-dark hover:text-primary-green transition-colors py-2" onclick="switchView('auth')">Login / Sign Up</a>
+                </nav>
+
+                <!-- Cart Icon & Mobile Menu --><div class="flex items-center space-x-4">
+                    <button onclick="switchView('cart')" class="relative p-2 rounded-full text-text-dark hover:text-primary-green transition-colors">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span id="cart-count" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-accent-pink rounded-full hidden">0</span>
+                    </button>
+                    <!-- Mobile Menu Button (Hamburger) --><button id="mobile-menu-btn" class="md:hidden p-2 text-text-dark hover:text-primary-green transition-colors">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu (Hidden by default) --><div id="mobile-menu" class="hidden md:hidden shadow-lg bg-white">
+            <nav class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#" data-view="home" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-text-dark hover:bg-gray-100" onclick="switchView('home')">Home</a>
+                <a href="#" data-view="shops" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-text-dark hover:bg-gray-100" onclick="switchView('shops')">Shops</a>
+                <a href="#" data-view="about" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-text-dark hover:bg-gray-100" onclick="switchView('about')">About</a>
+                <a href="#" data-view="contact" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-text-dark hover:bg-gray-100" onclick="switchView('contact')">Contact</a>
+                <a href="#" data-view="auth" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-text-dark hover:bg-gray-100" onclick="switchView('auth')">Login / Sign Up</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area --><main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        <!-- HOME PAGE SECTION --><section id="home" class="view-section">
+            <!-- Hero Section --><div class="bg-primary-green text-white p-10 md:p-20 rounded-3xl shadow-2xl mb-12 flex flex-col md:flex-row items-center justify-between">
+                <div class="md:w-1/2">
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 animate-fadeIn text-black">Fresh Flowers, Fair Prices.</h1>
+                    <p class="text-xl md:text-2xl font-light mb-8 text-black/90">Connecting Growers & Buyers – Digital Access to Local Blooms.</p>
+                    <!-- Search Bar (Simulated) --><div class="flex">
+                        <input type="text" placeholder-white="Find nearby flower shops by city or pin code..."
+                                class="flex-grow p-4 rounded-l-xl text-black focus:ring-accent-pink focus:border-accent-red border-none transition-all-smooth shadow-inner">
+                        <button onclick="switchView('shops')"
+                                class="bg-pink bg-pink-400 text-black font-semibold px-6 rounded-r-xl transition-all-smooth btn-primary">
+                            Search
+                        </button>
+                    </div>
+                </div>
+                <div class="md:w-1/3 mt-8 md:mt-0 flex justify-center">
+                    <span class="text-9xl transform hover:scale-105 transition-transform duration-500">🌸</span>
+                </div>
+            </div>
+            
+            <!-- Quick Link Cards (Completion starts here) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 1: Find Shops -->
+                <div class="card bg-white p-6 rounded-xl shadow-lg transition-all-smooth flex items-center space-x-4 cursor-pointer border-t-4 border-accent-pink/50" onclick="switchView('shops')">
+                    <i class="fas fa-store text-4xl text-primary-green"></i>
+                    <div>
+                        <h3 class="font-semibold text-lg">Find Local Shops</h3>
+                        <p class="text-sm text-gray-500">Discover fresh growers near you.</p>
+                    </div>
+                </div>
+                
+                <!-- Card 2: View Cart -->
+                <div class="card bg-white p-6 rounded-xl shadow-lg transition-all-smooth flex items-center space-x-4 cursor-pointer border-t-4 border-primary-green/50" onclick="switchView('cart')">
+                    <i class="fas fa-shopping-basket text-4xl text-accent-pink"></i>
+                    <div>
+                        <h3 class="font-semibold text-lg">Your Cart</h3>
+                        <p class="text-sm text-gray-500">Review your order before checkout.</p>
+                    </div>
+                </div>
+
+                <!-- Card 3: Our Mission -->
+                <div class="card bg-white p-6 rounded-xl shadow-lg transition-all-smooth flex items-center space-x-4 cursor-pointer border-t-4 border-accent-pink/50" onclick="switchView('about')">
+                    <i class="fas fa-seedling text-4xl text-primary-green"></i>
+                    <div>
+                        <h3 class="font-semibold text-lg">Our Mission</h3>
+                        <p class="text-sm text-gray-500">Learn about our farm-to-shop promise.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AUTH SECTION -->
+        <section id="auth" class="view-section">
+            <div class="max-w-5xl mx-auto grid gap-8 md:grid-cols-2">
+                <div class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-accent-pink/50">
+                    <h2 class="text-3xl font-bold text-text-dark mb-4 flex items-center">
+                        <i class="fas fa-user-circle text-primary-green mr-3"></i> Customer Access
+                    </h2>
+                    <p class="text-gray-600 mb-6">Sign in to manage your orders or create a new account to start shopping with GreenBloom Farms.</p>
+
+                    <div class="flex mb-6 space-x-2">
+                        <div class="flex-1 flex space-x-2">
+                            <button id="customer-login-toggle" type="button" onclick="setAuthLoginType('customer')" class="flex-1 border border-primary-red rounded-lg px-4 py-2 font-semibold transition-colors bg-primary-red text-red">Customer</button>
+                            <button id="admin-login-toggle" type="button" onclick="setAuthLoginType('admin')" class="flex-1 border border-primary-green rounded-lg px-4 py-2 font-semibold transition-colors">Admin</button>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <button id="login-toggle" type="button" onclick="setAuthMode('login')" class="w-full border border-primary-green rounded-lg px-4 py-2 font-semibold transition-colors">Sign In</button>
+                        </div>
+                        <div class="mr-0 ml-2">
+                            <button id="signup-toggle" type="button" onclick="setAuthMode('signup')" class="w-full border border-primary-green rounded-lg px-4 py-2 font-semibold transition-colors bg-white text-text-dark">Create Account</button>
+                        </div>
+                    </div>
+
+                    <div id="login-form-panel">
+                        <div id="login-message" class="mb-4 text-sm"></div>
+                        <form id="login-form" class="space-y-4">
+                            <div>
+                                <label for="login-email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                <input type="email" id="login-email" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-green focus:border-primary-green transition" placeholder="you@example.com" required>
+                            </div>
+                            <div>
+                                <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="password" id="login-password" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-green focus:border-primary-green transition" placeholder="••••••••" required>
+                            </div>
+                            <button type="submit" class="w-full bg-primary-green text-white font-semibold py-3 rounded-lg transition hover:bg-green-700">Sign In</button>
+                        </form>
+                        <div class="mt-3 text-sm">
+                            <button type="button" onclick="demoManagerLogin()" class="text-sm text-primary-green underline">Login as Manager (demo)</button>
+                        </div>
+                    </div>
+
+                    <div id="signup-form-panel" class="hidden">
+                        <div id="signup-message" class="mb-4 text-sm"></div>
+                        <form id="signup-form" class="space-y-4">
+                            <div>
+                                <label for="signup-name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                <input type="text" id="signup-name" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-green focus:border-primary-green transition" placeholder="Asha Patel" required>
+                            </div>
+                            <div>
+                                <label for="signup-email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                <input type="email" id="signup-email" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-green focus:border-primary-green transition" placeholder="you@example.com" required>
+                            </div>
+                            <div>
+                                <label for="signup-phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                <input type="tel" id="signup-phone" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-green focus:border-primary-green transition" placeholder="+91 98765 43210">
+                            </div>
+                            <div>
+                                <label for="signup-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="password" id="signup-password" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-primary-green focus:border-primary-green transition" placeholder="Create a password" required>
+                            </div>
+                            <button type="submit" class="w-full bg-accent-pink text-white font-semibold py-3 rounded-lg transition hover:bg-pink-600">Create Customer Account</button>
+                        </form>
+                        <div class="mt-3 text-sm">
+                            <p class="text-sm text-gray-600 mb-1">Want to create an admin account? Use the link below and enter the admin code when prompted.</p>
+                            <button type="button" onclick="createAdminAccountPrompt()" class="text-sm text-primary-green underline">Create Admin Account (requires code)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="price-adjustment-panel" class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-primary-green/50 hidden">
+                    <h3 class="text-2xl font-semibold text-text-dark mb-3 flex items-center">
+                        <i class="fas fa-sliders-h text-primary-green mr-3"></i> Shop Price Adjustment
+                    </h3>
+                    <p class="text-gray-600 mb-6">Fine-tune pricing across every flower card instantly. Ideal for festival markups or special discounts.</p>
+                    <div class="mb-6">
+                        <label for="price-adjustment-slider" class="block text-sm font-medium text-gray-700 mb-2">Adjust All Flower Prices</label>
+                        <input type="range" id="price-adjustment-slider" min="-30" max="50" value="0" class="w-full accent-primary-green">
+                        <div class="text-right text-primary-green font-semibold mt-2">Current adjustment: <span id="price-adjustment-value">0%</span></div>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>Negative values offer instant discounts.</li>
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>Positive values increase prices for high-demand seasons.</li>
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>All cart totals update automatically.</li>
+                    </ul>
+                </div>
+                <div id="login-info-panel" class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-accent-pink/50">
+                    <h3 class="text-2xl font-semibold text-text-dark mb-3 flex items-center">
+                        <i class="fas fa-info-circle text-accent-pink mr-3"></i> Get Started
+                    </h3>
+                    <p class="text-gray-600 mb-4">Create an account or sign in to access exclusive features:</p>
+                    <ul class="text-sm text-gray-600 space-y-2 mb-4">
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>Manage your orders and delivery preferences</li>
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>Adjust shop prices (logged-in users only)</li>
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>Save your favorite flower shops</li>
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>Track your purchase history</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD SECTION -->
+        <section id="dashboard" class="view-section">
+            <div class="max-w-5xl mx-auto grid gap-8 md:grid-cols-2">
+                <div class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-accent-pink/50">
+                    <h2 class="text-3xl font-bold text-text-dark mb-4 flex items-center">
+                        <i class="fas fa-user-circle text-primary-green mr-3"></i> My Account
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="border-b border-gray-200 pb-4">
+                            <label class="text-sm font-medium text-gray-500">Full Name</label>
+                            <p id="dashboard-name" class="text-lg font-semibold text-text-dark mt-1">Loading...</p>
+                        </div>
+                        <div class="border-b border-gray-200 pb-4">
+                            <label class="text-sm font-medium text-gray-500">Email Address</label>
+                            <p id="dashboard-email" class="text-lg font-semibold text-text-dark mt-1">Loading...</p>
+                        </div>
+                        <div class="border-b border-gray-200 pb-4">
+                            <label class="text-sm font-medium text-gray-500">Phone Number</label>
+                            <p id="dashboard-phone" class="text-lg font-semibold text-text-dark mt-1">Loading...</p>
+                        </div>
+                        <div class="pb-4">
+                            <label class="text-sm font-medium text-gray-500">Member Since</label>
+                            <p id="dashboard-join-date" class="text-lg font-semibold text-text-dark mt-1">Loading...</p>
+                        </div>
+                        <div id="admin-controls" class="mt-2"></div>
+                        <button onclick="logout()" class="w-full bg-red-500 text-white font-semibold py-3 rounded-lg transition hover:bg-red-700 mt-6">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-primary-green/50">
+                    <h3 class="text-2xl font-semibold text-text-dark mb-3 flex items-center">
+                        <i class="fas fa-sliders-h text-primary-green mr-3"></i> Shop Price Adjustment
+                    </h3>
+                    <p class="text-gray-600 mb-6">Fine-tune pricing across every flower card instantly. Ideal for festival markups or special discounts.</p>
+                    <div class="mb-6">
+                        <label for="dashboard-price-adjustment-slider" class="block text-sm font-medium text-gray-700 mb-2">Adjust All Flower Prices</label>
+                        <input type="range" id="dashboard-price-adjustment-slider" min="-30" max="50" value="0" class="w-full accent-primary-green">
+                        <div class="text-right text-primary-green font-semibold mt-2">Current adjustment: <span id="dashboard-price-adjustment-value">0%</span></div>
+                    </div>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>Negative values offer instant discounts.</li>
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>Positive values increase prices for high-demand seasons.</li>
+                        <li><i class="fas fa-check text-primary-green mr-2"></i>All cart totals update automatically.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SHOPS LIST SECTION -->
+        <section id="shops" class="view-section">
+            <h2 class="text-3xl font-bold text-text-dark mb-6">Local Flower Shops</h2>
+            
+            <!-- Location Filter -->
+            <div class="flex space-x-3 mb-6">
+                <button id="location-filter-all" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-primary-green text-black">
+                    <i class="fas fa-globe mr-2 text-black"></i> All Shops
+                </button>
+                <button id="location-filter-near" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-gray-300 bg-white text-text-dark hover:bg-gray-100">
+                    <i class="fas fa-location-arrow mr-2"></i> Nearest First
+                </button>
+            </div>
+            <p id="filter-message" class="text-sm text-gray-500 mb-6"></p>
+
+            <div id="shops-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Shops will be rendered here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- SHOP DETAILS SECTION -->
+        <section id="shop-details" class="view-section">
+            <button onclick="switchView('shops')" class="text-primary-green hover:underline mb-4 flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i> Back to All Shops
+            </button>
+            <h2 id="shop-details-title" class="text-3xl font-bold text-text-dark mb-2"></h2>
+            <p id="shop-details-location" class="text-lg text-gray-500 mb-6"></p>
+            <div id="shop-details-controls" class="flex items-center mb-4"></div>
+            
+            <!-- Categories / Filter Tabs -->
+            <div id="flower-categories" class="flex flex-wrap border-b border-gray-200 pb-4 mb-6">
+                <!-- Category buttons rendered here -->
+            </div>
+            
+            <!-- Flower Items -->
+            <div id="flower-items-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Flower products will be rendered here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- CART SECTION -->
+        <section id="cart" class="view-section">
+            <h2 class="text-3xl font-bold text-text-dark mb-6 flex items-center">
+                <i class="fas fa-shopping-cart text-accent-pink mr-3"></i> Your Shopping Cart
+            </h2>
+
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Cart Items List -->
+                <div class="lg:w-2/3 bg-white p-6 rounded-xl shadow-lg border-t-4 border-primary-green/50">
+                    <div id="cart-items-container" class="divide-y divide-gray-100">
+                        <!-- Cart items rendered here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Cart Summary -->
+                <div class="lg:w-1/3">
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-md">
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-3">Order Summary</h3>
+                        
+                        <div class="flex justify-between items-center mb-2 text-lg">
+                            <span class="font-medium">Subtotal:</span>
+                            <span id="cart-total" class="font-bold text-primary-green">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-4 text-lg">
+                            <span class="font-medium">Delivery:</span>
+                            <span id="cart-delivery" class="font-bold text-primary-green">₹0.00</span>
+                        </div>
+                        
+                        <p class="text-sm text-gray-500 mb-6">Shipping calculated at checkout. Prices include all local taxes.</p>
+
+                        <button id="cart-proceed-button" onclick="switchView('checkout')"
+                                class="w-full bg-primary-green bg-green-700 text-white font-semibold py-3 rounded-lg transition-all-smooth btn-primary flex items-center justify-center hidden">
+                            Proceed to Checkout <i class="fas fa-chevron-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHECKOUT SECTION -->
+        <section id="checkout" class="view-section">
+            <h2 class="text-3xl font-bold text-text-dark mb-6 flex items-center">
+                <i class="fas fa-credit-card text-accent-pink mr-3"></i> Secure Checkout
+            </h2>
+
+            <div id="payment-message-box" class="mb-6">
+                <!-- Payment messages will appear here -->
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Payment Form -->
+                <div class="lg:w-2/3 bg-white p-8 rounded-xl shadow-lg border-t-4 border-primary-green/50">
+                    <h3 class="text-2xl font-semibold mb-6">Payment Options</h3>
+                    <form id="checkout-form" onsubmit="handlePayment(event)" class="space-y-5">
+                        <div>
+                            <p class="text-sm font-medium text-gray-700 mb-2">Choose how you want to pay</p>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <label class="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 cursor-pointer hover:border-primary-green transition">
+                                    <input type="radio" name="payment-method" value="upi" class="text-primary-green" checked>
+                                    <span class="text-sm font-semibold text-text-dark">UPI</span>
+                                </label>
+                                <label class="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 cursor-pointer hover:border-primary-green transition">
+                                    <input type="radio" name="payment-method" value="cod" class="text-primary-green">
+                                    <span class="text-sm font-semibold text-text-dark">Cash on Delivery</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4" id="upi-field-wrapper">
+                            <label for="upi-id" class="block text-sm font-medium text-gray-700 mb-2">
+                                UPI ID (e.g., yourname@bank)
+                            </label>
+                            <input type="text" id="upi-id" name="upi-id"
+                                   placeholder="Enter your UPI ID for instant payment"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-accent-pink focus:border-accent-pink transition-all-smooth">
+                        </div>
+
+                        <div>
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Delivery Address</label>
+                            <textarea id="address" name="address" rows="3" required
+                                      placeholder="Flat/House No., Building, Street, Landmark, Pin Code"
+                                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-accent-pink focus:border-accent-pink transition-all-smooth"></textarea>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-accent-pink bg-blue-400 text-white font-semibold py-4 rounded-lg transition-all-smooth btn-primary flex items-center justify-center">
+                            <i class="fas fa-money-bill-wave mr-3"></i> Confirm Payment Method
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Final Order Summary -->
+                <div class="lg:w-1/3">
+                    <div class="bg-primary-green/10 p-6 rounded-xl shadow-md border border-primary-green">
+                        <h3 class="text-xl font-semibold text-primary-green mb-4 border-b border-primary-green/30 pb-3">Final Total</h3>
+                        <div class="flex justify-between items-center mb-2 text-lg">
+                            <span class="font-medium">Delivery Charges:</span>
+                            <span id="cart-delivery-checkout" class="font-bold text-primary-green">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-2xl mb-4">
+                            <span class="font-bold">Total Payable:</span>
+                            <span id="cart-total-checkout" class="font-extrabold text-primary-green">₹0.00</span>
+                        </div>
+                        <p class="text-sm text-gray-700">By clicking 'Pay Now', you confirm your purchase and agree to our delivery terms.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABOUT SECTION -->
+        <section id="about" class="view-section">
+            <h2 class="text-3xl font-bold text-text-dark mb-6 flex items-center">
+                <i class="fas fa-leaf text-primary-green mr-3"></i> Our Story: GreenBloom Farms
+            </h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg space-y-6">
+                <p class="text-lg">
+                    GreenBloom Farms started with a simple mission: to connect local Indian flower growers directly with buyers, ensuring freshness, fair prices, and traceability. We believe that every celebration deserves the freshest blooms, and every grower deserves a transparent marketplace.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-tractor text-4xl text-primary-green mb-3"></i>
+                        <h4 class="font-semibold text-lg">Farm Direct</h4>
+                        <p class="text-sm text-gray-500">Minimal middlemen, maximum freshness.</p>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-rupee-sign text-4xl text-accent-pink mb-3"></i>
+                        <h4 class="font-semibold text-lg">Fair Pricing</h4>
+                        <p class="text-sm text-gray-500">Competitive prices for buyers and better margins for growers.</p>
+                    </div>
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <i class="fas fa-hand-holding-heart text-4xl text-primary-green mb-3"></i>
+                        <h4 class="font-semibold text-lg">Support Local</h4>
+                        <p class="text-sm text-gray-500">Every purchase supports local farming communities.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT SECTION -->
+        <section id="contact" class="view-section">
+            <h2 class="text-3xl font-bold text-text-dark mb-6 flex items-center">
+                <i class="fas fa-envelope text-accent-pink mr-3"></i> Get in Touch
+            </h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
+                <p class="text-gray-600 mb-6">Have questions about your order, delivery, or becoming a verified grower? Reach out to us!</p>
+                
+                <form onsubmit="event.preventDefault(); this.innerHTML='<div class=\'bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative\' role=\'alert\'>Thank you! We have received your message and will respond shortly.</div>';">
+                    <div class="mb-4">
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                        <input type="text" id="name" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary-green focus:border-primary-green">
+                    </div>
+                    <div class="mb-4">
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="email" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary-green focus:border-primary-green">
+                    </div>
+                    <div class="mb-6">
+                        <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                        <textarea id="message" rows="4" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary-green focus:border-primary-green"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-primary-green hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all-smooth btn-primary">
+                        Send Message
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modals -->
+    <div id="modal-overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/50 hidden z-40"></div>
+
+    <!-- Admin Code Modal -->
+    <div id="admin-code-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 class="text-lg font-semibold mb-3">Enter Admin Code</h3>
+            <form onsubmit="submitAdminCodeForm(event)">
+                <input id="admin-code-input" type="password" placeholder="Enter admin code" class="w-full p-2 border rounded mb-2" />
+                <div id="admin-code-error" class="text-sm text-red-600 mb-2"></div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('admin-code-modal')" class="px-3 py-2 bg-gray-100 rounded">Cancel</button>
+                    <button type="submit" class="px-3 py-2 bg-primary-green text-white rounded">Activate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Admin Modal -->
+    <div id="create-admin-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+            <h3 class="text-lg font-semibold mb-3">Create Admin Account (Protected)</h3>
+            <form onsubmit="submitCreateAdminForm(event)">
+                <input id="create-admin-secret" type="password" placeholder="Creation code" class="w-full p-2 border rounded mb-2" />
+                <input id="create-admin-name" type="text" placeholder="Full name" class="w-full p-2 border rounded mb-2" />
+                <input id="create-admin-email" type="email" placeholder="Email" class="w-full p-2 border rounded mb-2" />
+                <input id="create-admin-password" type="password" placeholder="Password" class="w-full p-2 border rounded mb-2" />
+                <div id="create-admin-error" class="text-sm text-red-600 mb-2"></div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('create-admin-modal')" class="px-3 py-2 bg-gray-100 rounded">Cancel</button>
+                    <button type="submit" class="px-3 py-2 bg-primary-green text-white rounded">Create Admin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="mt-12 py-8 bg-white shadow-inner border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            &copy; 2025 GreenBloom Farms. All rights reserved. | <a href="#" onclick="switchView('about')" class="hover:text-primary-green">Terms of Service</a> | Designed for Freshness.
+        </div>
+    </footer>
+
+</body>
+</html>
